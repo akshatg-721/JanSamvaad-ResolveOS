@@ -1,67 +1,83 @@
 # 🗣️ JanSamvaad ResolveOS
+### India's First Voice-First Governance Operating System
 
 > **"Voice mein bol do. Hum sun rahe hain."**
 > *(Just speak. We are listening.)*
 
-A multilingual AI-powered civic grievance system for India. Citizens call a phone number, speak their complaint in Hindi or English — and within 3 seconds, the grievance is auto-classified, ticketed, and live on an operator dashboard. No app. No form. No queue.
+A multilingual AI-powered civic grievance system built for Bharat. Citizens call a phone number, speak their complaint in Hindi or English — the system automatically converts voice into structured civic tickets, visible to operators in real time. No app. No form. No queue. No smartphone required.
 
 > 🏆 Built for **India Innovates 2026 — The FiSTA** | BML Munjal University
 
 ---
 
-## 🔴 Live Demo
-
-**Call right now:** `+1 570 630 8042`
-
-Speak your complaint in Hindi or English. Watch the dashboard update in real time.
-
----
-
 ## 🚨 The Problem
 
-- India generates **2 crore+ municipal grievances per year**
-- CPGRAMS takes an average of **21 days** to resolve a complaint
-- Existing systems (CPGRAMS, MyGov) require internet, smartphones, and literacy
-- **65% of India** relies on basic phone calls — completely excluded from digital grievance systems
-- 4,000+ municipalities with no intelligent, inclusive grievance infrastructure
+Millions of grievances are registered annually across CPGRAMS and municipal systems — yet resolution remains slow, inaccessible, and disconnected from the citizens who matter most.
+
+- Existing grievance portals require internet access, smartphones, and digital literacy
+- A large portion of India's population relies on basic mobile phones — completely excluded from digital governance systems
+- Municipal teams lack real-time visibility, evidence trails, and SLA accountability
+- The result: complaints go unheard, trust in civic systems erodes
 
 ---
 
-## ✅ Our Solution
+## 🇮🇳 Alignment with National Initiatives
+
+JanSamvaad ResolveOS is designed to complement and extend India's existing governance vision:
+
+| Initiative | How JanSamvaad Aligns |
+|-----------|----------------------|
+| 🇮🇳 Digital India Mission | Voice-first interface bridges the digital divide |
+| 🏙️ Smart Cities Command Centers | Real-time dashboard integrates with municipal ops |
+| 🗣️ Bhashini Multilingual AI | Multilingual voice intake (Hindi, English — more planned) |
+| 📱 Inclusive Governance | Works on any basic phone, no smartphone needed |
+| 📊 Ease of Governance | Auto-classification eliminates manual data entry |
+
+---
+
+## ✅ How It Works
+
+A villager calls to report a broken streetlight. Within seconds, the system generates a structured ticket and routes it to the correct ward. The citizen receives an SMS reference number immediately. Once the issue is resolved, they receive a QR-verified resolution proof — full accountability, zero paperwork.
 
 | Step | What Happens |
 |------|-------------|
-| 📞 Citizen calls | Dials our Twilio number — works on any basic phone |
-| 🎙️ Speaks complaint | In Hindi or English, no typing required |
-| 🤖 AI classifies | Gemini 2.0 Flash extracts intent, category & severity in **under 3 seconds** |
-| 🎫 Ticket created | Auto-logged in PostgreSQL with reference number |
-| 📊 Dashboard updates | Operator sees live ticket via WebSocket — zero data entry |
-| 📱 SMS confirmation | Citizen gets ticket reference immediately |
-| 🔍 Evidence upload | Operator can attach photos/documents |
-| ✅ Resolution | One-click resolve sends SMS + QR receipt to citizen |
+| 📞 Citizen calls | Dials the number — works on any basic mobile phone |
+| 🎙️ Speaks complaint | In Hindi or English, no typing or internet required |
+| 🤖 AI classifies | Automatically extracts intent, category & severity within seconds |
+| 🎫 Ticket created | Auto-logged with a unique reference number |
+| 📊 Dashboard updates | Operator sees live ticket in real time — zero manual data entry |
+| 📱 SMS confirmation | Citizen receives ticket reference immediately |
+| 🔍 Evidence upload | Operator attaches photos or documents |
+| ✅ Resolution | One-click resolve sends SMS + QR-verified receipt to citizen |
+
+---
+
+## 🌏 The Offline India Advantage
+
+Because JanSamvaad relies on voice calls rather than smartphone apps, it works for India's large population that depends on basic mobile phones rather than internet-connected devices. This is our strongest differentiator — and the reason this system can scale across India's 4,000+ municipalities and rural districts where app-based solutions simply cannot reach.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-Citizen Call (Twilio)
+Citizen Voice Call
        ↓
-TRAI IVR (DND Check + Consent)
+IVR Flow (DND Check + Consent)
        ↓
 Language Detection → Record → Transcribe
        ↓
 Node.js + Express (Webhook Handler)
        ↓
-Gemini 2.0 Flash (extractIntent → category, severity, summary)
+Gemini AI (Auto-classification → category, severity, summary)
        ↓
-PostgreSQL (Ticket Created)
+PostgreSQL (Ticket Created + Reference Generated)
        ↓
-Socket.IO (Real-time push)
+Socket.IO (Real-time push to dashboard)
        ↓
-React Dashboard (Operator View)
+Operator Dashboard (React — Live View)
        ↓
-Evidence Upload → Resolve → SMS + QR Card
+Evidence Upload → Resolve → SMS + QR Resolution Card
 ```
 
 ---
@@ -70,27 +86,28 @@ Evidence Upload → Resolve → SMS + QR Card
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| 📞 Citizen | Twilio Voice + SMS | IVR calls & SMS notifications |
-| 🤖 AI | Google Gemini 2.0 Flash | Intent, category & severity extraction |
-| ⚙️ Backend | Node.js + Express | REST API & webhooks |
+| 📞 Citizen Interface | Twilio Voice + SMS | IVR calls & SMS notifications |
+| 🤖 AI Engine | Google Gemini AI | Auto-classification of grievances |
+| ⚙️ Backend | Node.js + Express | REST API & webhook handling |
 | 🗄️ Data | PostgreSQL + Socket.IO | Persistent storage & real-time events |
 | 🖥️ Frontend | React 18 + Vite + Tailwind | Live operator dashboard |
 | 🔒 Security | JWT + node-cron + pino | Auth, SLA enforcement & structured logging |
-| 🚀 Infra | Docker + nginx | 3-container deployment |
+| 🚀 Infrastructure | Docker + nginx | 3-container deployment |
 
 ---
 
-## ⚡ Why JanSamvaad Wins
+## ⚡ Voice-First vs Traditional Grievance Portals
 
-| Feature | CPGRAMS | MyGov | JanSamvaad |
-|---------|---------|-------|------------|
-| Works without internet | ❌ | ❌ | ✅ |
-| AI auto-classification | ❌ | ❌ | ✅ |
-| Real-time dashboard | ❌ | ❌ | ✅ |
-| SMS proof to citizen | ❌ | ❌ | ✅ |
-| Under 3 sec response | ❌ | ❌ | ✅ |
-| TRAI compliant | ❌ | ❌ | ✅ |
-| Works on basic phone | ❌ | ❌ | ✅ |
+| Feature | Traditional Grievance Portals | JanSamvaad ResolveOS |
+|---------|-------------------------------|----------------------|
+| Requires internet | ✅ Yes | ❌ Not required |
+| Requires smartphone | ✅ Yes | ❌ Not required |
+| AI auto-classification | ❌ No | ✅ Yes |
+| Real-time operator dashboard | ❌ No | ✅ Yes |
+| SMS proof to citizen | ❌ No | ✅ Yes |
+| Works on basic phone | ❌ No | ✅ Yes |
+| Zero manual data entry | ❌ No | ✅ Yes |
+| QR-verified resolution receipt | ❌ No | ✅ Yes |
 
 ---
 
@@ -134,8 +151,8 @@ docker compose up --build
 ```
 ├── server.js                    # Express + Socket.IO entry point
 ├── src/
-│   ├── webhooks/voice.js        # Twilio IVR, consent, transcription
-│   ├── services/llm.js          # Gemini 2.0 Flash — extractIntent()
+│   ├── webhooks/voice.js        # IVR flow, consent, transcription
+│   ├── services/llm.js          # Gemini AI — auto-classification
 │   ├── crm/ticket.js            # Ticket creation, SLA logic
 │   ├── api/
 │   │   ├── auth.js              # JWT login
@@ -143,8 +160,8 @@ docker compose up --build
 │   │   └── evidence.js          # Evidence upload, resolve endpoint
 │   ├── middleware/
 │   │   └── authenticateToken.js # JWT middleware
-│   └── utils/logger.js          # pino structured logging
-├── src/components/Dashboard.jsx # Full React operator dashboard
+│   └── utils/logger.js          # Structured logging
+├── src/components/Dashboard.jsx # React operator dashboard
 ├── frontend/default.conf        # nginx reverse proxy config
 ├── docker-compose.yml           # 3-container orchestration
 └── .env.example                 # Environment variable template
@@ -176,6 +193,22 @@ ENABLE_SLA_CRON=true
 
 ---
 
+## 📊 Impact & Scalability
+
+**Current:** Working prototype with live voice IVR, AI auto-classification, real-time dashboard, and Docker deployment.
+
+Because the system relies on voice calls rather than smartphone apps, it can scale across India's 4,000+ municipalities and rural districts — reaching citizens that app-based solutions simply cannot.
+
+**Roadmap:**
+- Multi-language support (Tamil, Bengali, Marathi, Gujarati)
+- WhatsApp channel integration
+- Auto-escalation to district collectors
+- Analytics dashboard for municipality performance
+- Integration with Smart Cities Command Centers
+- Bhashini API integration for broader language coverage
+
+---
+
 ## 👥 Team
 
 | Name | Role |
@@ -186,19 +219,6 @@ ENABLE_SLA_CRON=true
 | **Aditya Jain** | Research & Deployment Engineer |
 
 **BML Munjal University** | India Innovates 2026 — The FiSTA
-
----
-
-## 📊 Impact & Roadmap
-
-**Current:** Working prototype with live Twilio IVR, Gemini AI, real-time dashboard, Docker deployment
-
-**Roadmap:**
-- Multi-language support (Tamil, Bengali, Marathi)
-- WhatsApp channel integration
-- Auto-escalation to district collectors
-- Analytics dashboard for municipality performance
-- Deployment across 4,000+ Indian municipalities
 
 ---
 

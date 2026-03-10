@@ -12,18 +12,28 @@ A multilingual AI-powered civic grievance system built for Bharat. Citizens call
 
 ## 🚨 The Problem
 
-Millions of grievances are registered annually across CPGRAMS and municipal systems — yet resolution remains slow, inaccessible, and disconnected from the citizens who matter most.
+Millions of grievances are registered annually across national and municipal portals, yet complaint intake, classification, and follow-up remain largely manual and fragmented.
 
 - Existing grievance portals require internet access, smartphones, and digital literacy
-- A large portion of India's population relies on basic mobile phones — completely excluded from digital governance systems
+- Over 300 million Indians rely on basic mobile phones — completely excluded from digital governance systems
 - Municipal teams lack real-time visibility, evidence trails, and SLA accountability
 - The result: complaints go unheard, trust in civic systems erodes
 
 ---
 
-## 🇮🇳 Alignment with National Initiatives
+## ⏱️ Why Now?
 
-JanSamvaad ResolveOS is designed to complement and extend India's existing governance vision:
+Three trends make JanSamvaad possible today:
+
+- **Multilingual AI** — Advances in AI models now enable accurate speech understanding across Indian languages
+- **Digital India push** — Government momentum toward digital governance platforms creates the right policy environment
+- **Cloud telephony at scale** — Scalable voice infrastructure makes citizen-facing IVR systems affordable and deployable nationwide
+
+Together, these enable a new generation of voice-first civic infrastructure — and JanSamvaad is built to lead it.
+
+---
+
+## 🇮🇳 Alignment with National Initiatives
 
 | Initiative | How JanSamvaad Aligns |
 |-----------|----------------------|
@@ -54,7 +64,7 @@ A villager calls to report a broken streetlight. Within seconds, the system gene
 
 ## 🌏 The Offline India Advantage
 
-Because JanSamvaad relies on voice calls rather than smartphone apps, it works for India's large population that depends on basic mobile phones rather than internet-connected devices. This is our strongest differentiator — and the reason this system can scale across India's 4,000+ municipalities and rural districts where app-based solutions simply cannot reach.
+Over 300 million Indians still rely on basic mobile phones, making voice-first governance essential for inclusive civic participation. Because JanSamvaad relies on voice calls rather than smartphone apps, it can scale across India's 4,000+ municipalities and rural districts — reaching citizens that app-based solutions simply cannot.
 
 ---
 
@@ -193,17 +203,18 @@ ENABLE_SLA_CRON=true
 
 ---
 
-## 📊 Impact & Scalability
+## 📊 Potential Impact
 
-**Current:** Working prototype with live voice IVR, AI auto-classification, real-time dashboard, and Docker deployment.
-
-Because the system relies on voice calls rather than smartphone apps, it can scale across India's 4,000+ municipalities and rural districts — reaching citizens that app-based solutions simply cannot.
+- **Faster grievance intake** through automated voice classification
+- **Reduced manual workload** for municipal staff
+- **Greater transparency** via QR-verified resolution receipts
+- **Inclusive governance** for citizens without smartphones
+- **Scalable** across India's 4,000+ municipalities and rural districts
 
 **Roadmap:**
 - Multi-language support (Tamil, Bengali, Marathi, Gujarati)
 - WhatsApp channel integration
 - Auto-escalation to district collectors
-- Analytics dashboard for municipality performance
 - Integration with Smart Cities Command Centers
 - Bhashini API integration for broader language coverage
 

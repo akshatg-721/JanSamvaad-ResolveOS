@@ -244,6 +244,14 @@ ENABLE_SLA_CRON=true
 
 ---
 
+## 🎥 Demo Video
+
+[![JanSamvaad ResolveOS Live Demo](https://img.youtube.com/vi/UxZRcPat5WY/maxresdefault.jpg)](https://youtu.be/UxZRcPat5WY)
+
+> Click the thumbnail above to watch the live demo — citizen call → AI classification → dashboard update → SMS + QR resolution proof.
+
+---
+
 ## 👥 Team
 
 | Name | Role |

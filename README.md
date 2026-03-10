@@ -1,5 +1,5 @@
 # 🗣️ JanSamvaad ResolveOS
-### India's First Voice-First Governance Operating System
+### A Voice-First Governance Operating System for India
 
 > **"Voice mein bol do. Hum sun rahe hain."**
 > *(Just speak. We are listening.)*
@@ -13,6 +13,8 @@ A multilingual AI-powered civic grievance system built for Bharat. Citizens call
 ## 🚨 The Problem
 
 Millions of grievances are registered annually across national and municipal portals, yet complaint intake, classification, and follow-up remain largely manual and fragmented.
+
+In many municipal offices, complaints arrive through scattered phone calls, handwritten registers, and WhatsApp messages — making tracking and accountability extremely difficult.
 
 - Existing grievance portals require internet access, smartphones, and digital literacy
 - Over 300 million Indians rely on basic mobile phones — completely excluded from digital governance systems
@@ -29,7 +31,7 @@ Three trends make JanSamvaad possible today:
 - **Digital India push** — Government momentum toward digital governance platforms creates the right policy environment
 - **Cloud telephony at scale** — Scalable voice infrastructure makes citizen-facing IVR systems affordable and deployable nationwide
 
-Together, these enable a new generation of voice-first civic infrastructure — and JanSamvaad is built to lead it.
+Together, these enable a new generation of voice-first civic infrastructure.
 
 ---
 
@@ -47,15 +49,13 @@ Together, these enable a new generation of voice-first civic infrastructure — 
 
 ## ✅ How It Works
 
-A villager calls to report a broken streetlight. Within seconds, the system generates a structured ticket and routes it to the correct ward. The citizen receives an SMS reference number immediately. Once the issue is resolved, they receive a QR-verified resolution proof — full accountability, zero paperwork.
-
 | Step | What Happens |
 |------|-------------|
 | 📞 Citizen calls | Dials the number — works on any basic mobile phone |
 | 🎙️ Speaks complaint | In Hindi or English, no typing or internet required |
-| 🤖 AI classifies | Automatically extracts intent, category & severity within seconds |
+| 🤖 AI classifies | Automatically extracts grievance category, severity & summary within seconds |
 | 🎫 Ticket created | Auto-logged with a unique reference number |
-| 📊 Dashboard updates | Operator sees live ticket in real time — zero manual data entry |
+| 📊 Dashboard updates | Operator sees real-time ticket updates — zero manual data entry |
 | 📱 SMS confirmation | Citizen receives ticket reference immediately |
 | 🔍 Evidence upload | Operator attaches photos or documents |
 | ✅ Resolution | One-click resolve sends SMS + QR-verified receipt to citizen |
@@ -77,13 +77,15 @@ IVR Flow (DND Check + Consent)
        ↓
 Language Detection → Record → Transcribe
        ↓
-Node.js + Express (Webhook Handler)
+Node.js + Express (Telephony Webhook Processing)
        ↓
 Gemini AI (Auto-classification → category, severity, summary)
        ↓
 PostgreSQL (Ticket Created + Reference Generated)
        ↓
-Socket.IO (Real-time push to dashboard)
+SLA Engine + Escalation Logic
+       ↓
+Socket.IO (Real-time ticket updates to operator dashboard)
        ↓
 Operator Dashboard (React — Live View)
        ↓
@@ -98,11 +100,13 @@ Evidence Upload → Resolve → SMS + QR Resolution Card
 |-------|-----------|---------|
 | 📞 Citizen Interface | Twilio Voice + SMS | IVR calls & SMS notifications |
 | 🤖 AI Engine | Google Gemini AI | Auto-classification of grievances |
-| ⚙️ Backend | Node.js + Express | REST API & webhook handling |
+| ⚙️ Backend | Node.js + Express | REST API & telephony webhook processing |
 | 🗄️ Data | PostgreSQL + Socket.IO | Persistent storage & real-time events |
 | 🖥️ Frontend | React 18 + Vite + Tailwind | Live operator dashboard |
 | 🔒 Security | JWT + node-cron + pino | Auth, SLA enforcement & structured logging |
 | 🚀 Infrastructure | Docker + nginx | 3-container deployment |
+
+> 🔐 Citizen data is stored securely with access control and encrypted communication channels.
 
 ---
 
@@ -118,6 +122,19 @@ Evidence Upload → Resolve → SMS + QR Resolution Card
 | Works on basic phone | ❌ No | ✅ Yes |
 | Zero manual data entry | ❌ No | ✅ Yes |
 | QR-verified resolution receipt | ❌ No | ✅ Yes |
+
+---
+
+## 📖 Example Deployment Scenario
+
+A resident calls to report a broken streetlight near their street. Within seconds:
+
+1. The system converts speech into a structured grievance ticket
+2. The ticket is routed to the relevant ward engineer
+3. The citizen receives an SMS confirmation with a reference number
+4. Once repaired, the citizen receives a QR-verified resolution proof
+
+This creates a transparent grievance loop between citizen and administration — with full accountability at every step.
 
 ---
 
@@ -205,9 +222,10 @@ ENABLE_SLA_CRON=true
 
 ## 📊 Potential Impact
 
-- **Faster grievance intake** through automated voice classification
-- **Reduced manual workload** for municipal staff
-- **Greater transparency** via QR-verified resolution receipts
+- **Faster grievance intake** through AI-assisted voice classification
+- **Reduces operator workload** through automated intake and routing
+- **Improves transparency** in grievance handling via QR-verified receipts
+- **Enables data-driven municipal governance** through structured ticket data
 - **Inclusive governance** for citizens without smartphones
 - **Scalable** across India's 4,000+ municipalities and rural districts
 

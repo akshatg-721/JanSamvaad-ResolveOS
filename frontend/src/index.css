@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* ── Tokens ── */
+:root {
+  --bg:        #FAFAFA;
+  --bg-raised: #FFFFFF;
+  --surface:   #FFFFFF;
+  --border:    #E5E7EB;
+  --border-hi: #D1D5DB;
+  --ink:       #111827;
+  --ink-2:     #374151;
+  --ink-3:     #6B7280;
+  --ink-4:     #9CA3AF;
+
+  --red:       #DC2626;
+  --red-bg:    #FEF2F2;
+  --red-border:#FECACA;
+  --orange:    #D97706;
+  --orange-bg: #FFFBEB;
+  --amber:     #D97706;
+  --amber-bg:  #FEF3C7;
+  --green:     #16A34A;
+  --green-bg:  #F0FDF4;
+  --green-border:#BBF7D0;
+  --blue:      #2563EB;
+  --blue-bg:   #EFF6FF;
+  --purple:    #7C3AED;
+  --purple-bg: #F5F3FF;
+  --teal:      #0D9488;
+  --teal-bg:   #F0FDFA;
+
+  --f-serif:  'Outfit', sans-serif;
+  --f-sans:   'Inter', sans-serif;
+  --f-mono:   'Roboto Mono', monospace;
+
+  --radius: 8px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root      { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: var(--ink); color: var(--bg); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar        { width: 3px; height: 3px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border-hi); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+
+/* ── Leaflet overrides ── */
+.leaflet-container {
+  font-family: var(--f-mono) !important;
+  background: var(--bg-raised) !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0 !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+  background: var(--surface) !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content { margin: 0 !important; }
+.leaflet-popup-tip-container { display: none !important; }
+.leaflet-popup-close-button {
+  color: var(--ink-3) !important;
+  font-size: 16px !important;
+  padding: 6px 8px !important;
+}
+.leaflet-control-zoom {
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.leaflet-control-zoom a {
+  border-radius: 0 !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-family: var(--f-mono) !important;
+  font-size: 16px !important;
+  line-height: 26px !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--bg-raised) !important;
+}
+.leaflet-attribution-flag { display: none !important; }
+.leaflet-control-attribution {
+  background: var(--surface) !important;
+  font-family: var(--f-mono) !important;
+  font-size: 9px !important;
+  color: var(--ink-3) !important;
+  border: none !important;
+  padding: 2px 6px !important;
+}
+
+/* ── Map tooltip ── */
+.ward-tooltip {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+}
+.ward-tooltip::before { display: none !important; }
+
+/* ── Animations ── */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.6); opacity: 0.8; }
+  70%  { transform: scale(2);   opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in    { animation: fade-in 0.25s ease both; }
+.animate-slide-up   { animation: slide-up 0.3s ease both; }
+.animate-slide-right{ animation: slide-in-right 0.25s ease both; }
+
+/* ── Recharts overrides ── */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border) !important;
+  stroke-dasharray: 4 4 !important;
+}
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  border-radius: 0 !important;
+  font-family: var(--f-mono) !important;
+  font-size: 11px !important;
+}
+.recharts-text { font-family: var(--f-mono) !important; font-size: 10px !important; fill: var(--ink-3) !important; }
+.recharts-legend-item-text { font-family: var(--f-mono) !important; font-size: 10px !important; }

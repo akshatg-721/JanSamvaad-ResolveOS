@@ -266,20 +266,6 @@ export function GisSection() {
         <TileLayer url={mapUrls[mapStyle]} />
         <ZoomControl position="bottomright" />
 
-        {layers.heatmap && filteredTickets.filter(t => t.severity === 'High' && t.latitude).map(t => (
-          <Circle 
-            key={`heat-${t.id}`}
-            center={[t.latitude, t.longitude]} 
-            radius={800} 
-            pathOptions={{ 
-              color: getUrgencyColor(t.severity), 
-              fillColor: getUrgencyColor(t.severity), 
-              fillOpacity: 0.15,
-              weight: 0
-            }} 
-          />
-        ))}
-
         {showDelhiWards && delhiGeoData && (
           <GeoJSON 
             data={delhiGeoData.features.filter((f: any) => f.properties.type === "ward")}
@@ -357,7 +343,8 @@ export function GisSection() {
                 </div>
               </Popup>
             </Marker>
-        ))}
+          );
+        }) }
       </MapContainer>
     </div>
   );

@@ -357,7 +357,8 @@ export function GisSection() {
                 </div>
               </Popup>
             </Marker>
-        ))}
+          );
+        }) }
       </MapContainer>
     </div>
   );

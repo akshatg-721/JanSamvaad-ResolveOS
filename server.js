@@ -6,17 +6,18 @@ const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const { Server } = require('socket.io');
 const dotenv = require('dotenv');
+dotenv.config();
+
 const pool = require('./src/db');
 const { setIo } = require('./src/crm/ticket');
 const logger = require('./src/utils/logger');
 
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173'
+    origin: '*' // Allow all origins for development
   }
 });
 
@@ -24,12 +25,48 @@ const PORT = Number(process.env.PORT || 3000);
 app.set('io', io);
 setIo(io);
 
+function parseAllowedOrigins() {
+  const raw = process.env.ALLOWED_ORIGIN || process.env.ALLOWED_ORIGINS || '';
+  const parsed = raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (parsed.length > 0) {
+    return parsed;
+  }
+
+  return [
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://127.0.0.1:3001',
+    'http://127.0.0.1:5173'
+  ];
+}
+
+const allowedOrigins = parseAllowedOrigins();
+const isDevLike = process.env.NODE_ENV !== 'production';
+
 const voiceWebhookRouter = require('./src/webhooks/voice');
 const authRouter = require('./src/api/auth');
 const dashboardRouter = require('./src/api/dashboard');
 const evidenceRouter = require('./src/api/evidence');
 
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173' }));
+app.use(cors({ 
+  origin(origin, callback) {
+    if (!origin || isDevLike) {
+      callback(null, true);
+      return;
+    }
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('CORS origin not allowed'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use((req, res, next) => {
@@ -112,9 +149,17 @@ if (process.env.ENABLE_SLA_CRON !== 'false' && process.env.NODE_ENV !== 'test') 
 }
 
 function startServer() {
-  return server.listen(PORT, () => {
-    logger.info({ port: PORT }, 'JanSamvaad ResolveOS server listening');
-  });
+  return pool.ensureDbReady()
+    .then(() => {
+      logger.info('Database schema compatibility checks completed');
+      return server.listen(PORT, () => {
+        logger.info({ port: PORT }, 'JanSamvaad ResolveOS server listening');
+      });
+    })
+    .catch((error) => {
+      logger.error({ err: error }, 'Failed to initialize database schema');
+      throw error;
+    });
 }
 
 if (require.main === module) {

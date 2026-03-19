@@ -6,6 +6,35 @@
  */
 
 const BASE = ''; // Vite proxy forwards /api/* to http://localhost:3000
+const DIRECT_BACKEND_BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+
+function looksLikeHtml(text: string): boolean {
+  const sample = text.trim().slice(0, 500).toLowerCase();
+  return (
+    sample.startsWith('<!doctype html') ||
+    sample.startsWith('<html') ||
+    sample.includes('<head') ||
+    sample.includes('<meta') ||
+    sample.includes('<body')
+  );
+}
+
+function cleanErrorMessage(input: string | null | undefined, fallback: string): string {
+  const message = (input || '').trim();
+  if (!message) return fallback;
+  if (looksLikeHtml(message)) return fallback;
+  if (message.toLowerCase().includes('404: this page could not be found')) {
+    return 'API endpoint not found. Please verify backend/proxy configuration.';
+  }
+  return message;
+}
+
+function extractMessageFromJson(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const obj = payload as Record<string, unknown>;
+  const direct = obj.error ?? obj.message;
+  return typeof direct === 'string' ? direct : null;
+}
 
 export function getToken(): string | null {
   return localStorage.getItem('js_token');
@@ -32,19 +61,53 @@ export async function apiFetch<T = unknown>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const runFetch = (base: string) => fetch(`${base}${path}`, { ...options, headers });
+
+  let res: Response;
+  try {
+    res = await runFetch(BASE);
+  } catch {
+    try {
+      res = await runFetch(DIRECT_BACKEND_BASE);
+    } catch {
+      throw new Error('Cannot reach backend service. Please ensure API server is running on port 3000.');
+    }
+  }
+
+  const initialContentType = res.headers.get('content-type') || '';
+  const gotHtml404 = res.status === 404 && initialContentType.includes('text/html');
+  if (path.startsWith('/api/') && gotHtml404) {
+    res = await runFetch(DIRECT_BACKEND_BASE);
+  }
 
   if (res.status === 401) {
-    clearToken();
-    window.location.href = '/';
+    const isLoginCall = path.startsWith('/api/auth/login');
+    if (!isLoginCall) {
+      clearToken();
+      window.location.href = '/';
+    }
     throw new Error('Unauthorized');
   }
 
   if (!res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      let payload: unknown = null;
+      try {
+        payload = await res.json();
+      } catch {
+        // Ignore parse error and use fallback below
+      }
+      throw new Error(cleanErrorMessage(extractMessageFromJson(payload), `Request failed (${res.status})`));
+    }
     const text = await res.text();
-    throw new Error(text || `HTTP ${res.status}`);
+    throw new Error(cleanErrorMessage(text, `Request failed (${res.status})`));
   }
 
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('Unexpected response format from API. Expected JSON.');
+  }
   return res.json() as Promise<T>;
 }
 

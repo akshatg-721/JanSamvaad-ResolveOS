@@ -1,0 +1,62 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "New Delhi / Central",
+        "sector": "Sector 1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.10, 28.53],
+            [77.25, 28.53],
+            [77.25, 28.65],
+            [77.10, 28.65],
+            [77.10, 28.53]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "South Delhi",
+        "sector": "Sector 2"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.15, 28.45],
+            [77.28, 28.45],
+            [77.28, 28.53],
+            [77.15, 28.53],
+            [77.15, 28.45]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "North/West Delhi",
+        "sector": "Sector 3"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.05, 28.65],
+            [77.20, 28.65],
+            [77.20, 28.75],
+            [77.05, 28.75],
+            [77.05, 28.65]
+          ]
+        ]
+      }
+    }
+  ]
+}

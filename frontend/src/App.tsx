@@ -7,6 +7,7 @@ import Activity  from './pages/Activity';
 import Analytics from './pages/Analytics';
 import Reports   from './pages/Reports';
 import Settings  from './pages/Settings';
+import QRPage    from './pages/QRPage';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/reports"   element={<Reports />} />
         <Route path="/settings"  element={<Settings />} />
+        <Route path="/qr"        element={<QRPage />} />
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

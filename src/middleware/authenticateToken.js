@@ -25,7 +25,7 @@ function authenticateToken(req, res, next) {
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(403).json({ error: 'Forbidden' });
+    res.status(401).json({ error: 'Unauthorized: Invalid or expired token' });
   }
 }
 

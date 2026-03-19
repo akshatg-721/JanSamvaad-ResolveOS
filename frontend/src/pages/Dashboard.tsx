@@ -1,602 +1,382 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { apiFetch } from '../api/client';
-import { Grievance, Severity, Status, ApiTicket, mapTicket } from '../types';
+import { Grievance, Status, ApiTicket, mapTicket } from '../types';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell
+} from 'recharts';
+import { 
+  AlertCircle, 
+  CheckCircle2, 
+  Clock, 
+  MoreHorizontal, 
+  ArrowUpRight,
+  Upload,
+  X,
+  Zap,
+  ShieldCheck,
+  MapPin,
+  Calendar
+} from 'lucide-react';
 
-type FilterStatus = 'ALL' | Status;
+/* ── UI Components ── */
 
-const SEV: Record<Severity, { color: string; bg: string; label: string }> = {
-  CRITICAL: { color: 'var(--red)',    bg: 'var(--red-bg)',    label: 'CRITICAL' },
-  HIGH:     { color: 'var(--orange)', bg: 'var(--orange-bg)', label: 'HIGH' },
-  MEDIUM:   { color: 'var(--amber)',  bg: 'var(--amber-bg)',  label: 'MEDIUM' },
-  LOW:      { color: 'var(--ink-3)',  bg: 'var(--bg-raised)', label: 'LOW' },
+const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <div className={`card-premium p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const SevBadge = ({ s }: { s: string }) => {
+  const configs: Record<string, { color: string, bg: string }> = {
+    CRITICAL: { color: 'text-[var(--red)]', bg: 'bg-red-500/10 border-red-500/20' },
+    HIGH:     { color: 'text-orange-400',   bg: 'bg-orange-400/10 border-orange-400/20' },
+    MEDIUM:   { color: 'text-amber-400',   bg: 'bg-amber-400/10 border-amber-400/20' },
+    LOW:      { color: 'text-[var(--ink-4)]', bg: 'bg-gray-400/10 border-gray-400/20' },
+  };
+  const c = configs[s] || configs.LOW;
+  return (
+    <div className={`flex items-center gap-2 px-2 py-0.5 rounded-full border ${c.bg} ${c.color} text-[10px] font-bold tracking-wide uppercase w-fit`}>
+      <span className={`w-1 h-1 rounded-full bg-current ${s === 'CRITICAL' ? 'animate-pulse' : ''}`} />
+      {s}
+    </div>
+  );
 };
 
-function Dot({ sev }: { sev: Severity }) {
-  return (
-    <span style={{
-      display: 'inline-block',
-      width: '5px', height: '5px',
-      borderRadius: '50%',
-      background: SEV[sev].color,
-      flexShrink: 0,
-      marginRight: '5px',
-    }} />
-  );
-}
-
-function SevBadge({ s }: { s: Severity }) {
-  const c = SEV[s];
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center',
-      fontFamily: 'var(--f-mono)',
-      fontSize: '9px', letterSpacing: '0.1em',
-      color: c.color, background: c.bg,
-      padding: '3px 7px',
-      border: `1px solid ${c.color}33`,
-    }}>
-      <Dot sev={s} />
-      {s}
-    </span>
-  );
-}
-
-function StatusPill({ s }: { s: Status }) {
-  const map: Record<Status, { fg: string; bg: string; border: string }> = {
-    OPEN:         { fg: 'var(--ink-2)',  bg: 'transparent',        border: 'var(--border)' },
-    'IN-PROGRESS':{ fg: 'var(--orange)',bg: 'var(--orange-bg)',    border: 'var(--orange)' },
-    RESOLVED:     { fg: 'var(--green)', bg: 'var(--green-bg)',     border: 'var(--green)' },
+const StatusBadge = ({ s }: { s: string }) => {
+  const styles: Record<string, string> = {
+    'OPEN':        'text-[var(--blue)] border-[var(--blue)]/30 bg-[var(--blue)]/5',
+    'IN-PROGRESS': 'text-orange-400 border-orange-400/30 bg-orange-400/5',
+    'RESOLVED':    'text-[var(--green)] border-[var(--green)]/30 bg-[var(--green)]/5',
   };
-  const c = map[s];
   return (
-    <span style={{
-      fontFamily: 'var(--f-mono)',
-      fontSize: '9px', letterSpacing: '0.08em',
-      color: c.fg, background: c.bg,
-      padding: '3px 7px',
-      border: `1px solid ${c.border}66`,
-    }}>
+    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold tracking-wide uppercase ${styles[s] || 'text-[var(--ink-4)] border-[var(--border)]'}`}>
       {s}
     </span>
   );
-}
+};
 
-/* ── Evidence / Detail modal ── */
-function Modal({ gr, onClose, onResolve }: {
-  gr: Grievance;
-  onClose: () => void;
-  onResolve: (id: string) => void;
-}) {
+/* ── Modal ── */
+const TicketModal = ({ ticket, onClose, onResolve }: { ticket: Grievance, onClose: () => void, onResolve: (id: string) => void }) => {
+  if (!ticket) return null;
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(24,24,26,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 200,
-        backdropFilter: 'blur(2px)',
-      }}
-    >
-      <div
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-fade-in" onClick={onClose}>
+      <div 
+        className="glass border-[var(--border-hi)] w-full max-w-2xl rounded-2xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col"
         onClick={e => e.stopPropagation()}
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          width: '500px',
-          maxHeight: '88vh',
-          overflowY: 'auto',
-        }}
       >
-        {/* modal header */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '18px 22px',
-          borderBottom: '1px solid var(--border)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{
-              fontFamily: 'var(--f-serif)',
-              fontSize: '22px', fontStyle: 'italic',
-              color: 'var(--ink)',
-            }}>{gr.refId}</span>
-            <SevBadge s={gr.severity} />
+        <div className="p-8 pb-4 flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+               <span className="text-[12px] font-mono text-[var(--ink-4)] tracking-widest uppercase">Ticket Reference</span>
+               <StatusBadge s={ticket.status} />
+            </div>
+            <h2 className="text-3xl font-bold font-display tracking-tight mt-2">{ticket.refId}</h2>
           </div>
-          <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '18px', color: 'var(--ink-3)', lineHeight: 1,
-          }}>×</button>
+          <button onClick={onClose} className="p-2 hover:bg-[var(--surface-raised)] rounded-xl transition-all text-[var(--ink-4)] hover:text-[var(--ink)]">
+            <X size={24} />
+          </button>
         </div>
 
-        <div style={{ padding: '22px' }}>
-          {/* meta row */}
-          <div style={{
-            display: 'flex', gap: '24px', flexWrap: 'wrap',
-            marginBottom: '22px',
-            paddingBottom: '18px',
-            borderBottom: '1px solid var(--border)',
-          }}>
-            {[
-              { l: 'CATEGORY',  v: gr.category },
-              { l: 'WARD',      v: `${gr.ward} · ${gr.wardName}` },
-              { l: 'STATUS',    v: gr.status },
-              { l: 'SLA TIMER', v: gr.slaTimer },
-              { l: 'ASSIGNED',  v: gr.assignedTo },
-              { l: 'FILED',     v: gr.createdAt },
-            ].map(row => (
-              <div key={row.l}>
-                <div style={{
-                  fontFamily: 'var(--f-mono)',
-                  fontSize: '9px', color: 'var(--ink-4)',
-                  letterSpacing: '0.12em', marginBottom: '3px',
-                }}>{row.l}</div>
-                <div style={{
-                  fontFamily: 'var(--f-mono)',
-                  fontSize: '11px', color: 'var(--ink)',
-                }}>{row.v}</div>
+        <div className="p-8 overflow-y-auto space-y-8 max-h-[70vh] custom-scrollbar">
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="space-y-1">
+              <span className="text-[10px] text-[var(--ink-4)] font-bold uppercase tracking-widest flex items-center gap-1.5"><Zap size={10}/> Category</span>
+              <p className="text-[14px] font-medium">{ticket.category}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-[var(--ink-4)] font-bold uppercase tracking-widest flex items-center gap-1.5"><MapPin size={10}/> Ward</span>
+              <p className="text-[14px] font-medium">{ticket.wardName}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-[var(--ink-4)] font-bold uppercase tracking-widest flex items-center gap-1.5"><ShieldCheck size={10}/> Severity</span>
+              <SevBadge s={ticket.severity} />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-[var(--ink-4)] font-bold uppercase tracking-widest flex items-center gap-1.5"><Calendar size={10}/> Deadline</span>
+              <div className="flex items-center gap-2 text-[14px] font-mono font-bold">
+                <span className={ticket.slaTimer === 'BREACHED' ? 'text-[var(--red)]' : 'text-[var(--blue)]'}>{ticket.slaTimer}</span>
               </div>
-            ))}
-          </div>
-
-          {/* transcript */}
-          <div style={{ marginBottom: '18px' }}>
-            <div style={{
-              fontFamily: 'var(--f-mono)',
-              fontSize: '9px', color: 'var(--ink-4)',
-              letterSpacing: '0.12em', marginBottom: '8px',
-            }}>
-              AI TRANSCRIPT — {gr.language}
             </div>
-            <blockquote style={{
-              borderLeft: '2px solid var(--border-hi)',
-              paddingLeft: '14px',
-              fontFamily: 'var(--f-serif)',
-              fontSize: '14px', fontStyle: 'italic',
-              color: 'var(--ink-2)', lineHeight: 1.65,
-              background: 'var(--bg-raised)',
-              padding: '12px 14px',
-              margin: 0,
-            }}>
-              &ldquo;{gr.transcript}&rdquo;
-            </blockquote>
           </div>
 
-          {/* description */}
-          <div style={{ marginBottom: '22px' }}>
-            <div style={{
-              fontFamily: 'var(--f-mono)',
-              fontSize: '9px', color: 'var(--ink-4)',
-              letterSpacing: '0.12em', marginBottom: '8px',
-            }}>DESCRIPTION</div>
-            <p style={{
-              fontSize: '12px', color: 'var(--ink-2)',
-              lineHeight: 1.65, fontFamily: 'var(--f-sans)',
-            }}>{gr.description}</p>
+          {/* AI Summary */}
+          <div className="bg-[#0A0A0A] p-6 rounded-xl border border-[var(--border)] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--blue-glow)] blur-3xl rounded-full -mr-16 -mt-16 opacity-20 group-hover:opacity-40 transition-opacity" />
+            <p className="text-[10px] text-[var(--ink-4)] font-bold uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-[var(--blue)] shadow-[0_0_8px_var(--blue)]" />
+              Intelligent Transcript Summary
+            </p>
+            <p className="text-[15px] leading-relaxed text-[var(--ink-2)] font-medium">
+              "{ticket.transcript || 'Citizen reported issue via voice uplink. Initial classification suggests urgent attention required for municipal maintenance and rapid response.'}"
+            </p>
           </div>
 
-          {/* evidence files */}
-          {gr.evidence.length > 0 && (
-            <div style={{ marginBottom: '22px' }}>
-              <div style={{
-                fontFamily: 'var(--f-mono)',
-                fontSize: '9px', color: 'var(--ink-4)',
-                letterSpacing: '0.12em', marginBottom: '8px',
-              }}>EVIDENCE FILES</div>
-              {gr.evidence.map(f => (
-                <div key={f} style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '8px 10px', marginBottom: '4px',
-                  background: 'var(--bg-raised)',
-                  border: '1px solid var(--border)',
-                  fontFamily: 'var(--f-mono)',
-                  fontSize: '10px', color: 'var(--ink-3)',
-                }}>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                    <rect x="1" y="1" width="9" height="9" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="3" y1="4" x2="8" y2="4" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="3" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="0.8"/>
-                  </svg>
-                  {f}
-                </div>
-              ))}
+          {/* Evidence Upload */}
+          <div className="space-y-3">
+            <p className="text-[10px] text-[var(--ink-4)] font-bold uppercase tracking-widest">Resolution Verification Evidence</p>
+            <div className="border-2 border-dashed border-[var(--border)] rounded-2xl p-12 flex flex-col items-center justify-center text-[var(--ink-4)] hover:border-[var(--blue)] hover:bg-[var(--blue)]/5 transition-all cursor-pointer group">
+              <Upload size={32} className="mb-4 group-hover:text-[var(--blue)] group-hover:scale-110 transition-all duration-300" />
+              <p className="text-[14px] font-semibold text-[var(--ink-2)]">Drag and drop evidence assets</p>
+              <p className="text-[11px] mt-1 opacity-60">High-resolution JPEG or PNG preferred</p>
             </div>
-          )}
-
-          {/* citizen ref */}
-          <div style={{
-            fontFamily: 'var(--f-mono)',
-            fontSize: '9px', color: 'var(--ink-4)',
-            letterSpacing: '0.1em', marginBottom: '20px',
-          }}>
-            CITIZEN REF: {gr.citizenPhone}
           </div>
+        </div>
 
-          {/* actions */}
-          {gr.status !== 'RESOLVED' && (
-            <button
-              onClick={() => { onResolve(gr.id); onClose(); }}
-              style={{
-                width: '100%', padding: '12px',
-                background: 'var(--ink)', color: 'var(--bg)',
-                border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--f-mono)',
-                fontSize: '10px', letterSpacing: '0.14em',
-              }}
-            >
-              VERIFY &amp; RESOLVE →
-            </button>
-          )}
+        <div className="p-8 pt-4 flex gap-4 bg-[var(--surface-raised)]/30">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-3 text-[12px] font-bold border border-[var(--border)] hover:bg-[var(--surface-raised)] transition-all rounded-xl uppercase tracking-widest"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => { onResolve(ticket.id); onClose(); }}
+            disabled={ticket.status === 'RESOLVED'}
+            className={`flex-[2] py-3 text-[12px] font-bold rounded-xl transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-lg ${
+              ticket.status === 'RESOLVED' 
+              ? 'bg-[var(--surface-raised)] text-[var(--ink-4)] cursor-not-allowed border border-[var(--border)]' 
+              : 'bg-[var(--ink)] text-[var(--bg)] hover:bg-white active:scale-[0.97]'
+            }`}
+          >
+            <CheckCircle2 size={18} />
+            Finalize Resolution
+          </button>
         </div>
       </div>
     </div>
   );
-}
+};
 
-/* ── Dashboard ── */
+/* ── Main Dashboard ── */
+
 export default function Dashboard() {
-  const [filterStatus,   setFilterStatus]   = useState<FilterStatus>('ALL');
-  const [filterSeverity, setFilterSeverity] = useState('ALL');
-  const [filterWard,     setFilterWard]     = useState('ALL');
-  const [search,         setSearch]         = useState('');
-  const [activeGr,       setActiveGr]       = useState<Grievance | null>(null);
-  const [toast,          setToast]          = useState<{ msg: string; sub: string } | null>(null);
-  const [resolved,       setResolved]       = useState<Set<string>>(new Set());
-  const [grievances,     setGrievances]     = useState<Grievance[]>([]);
-  const [loading,        setLoading]        = useState(true);
+  const [tickets, setTickets] = useState<Grievance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTicket, setActiveTicket] = useState<Grievance | null>(null);
+  const [filterWard, setFilterWard] = useState('ALL');
+  const [filterSev, setFilterSev] = useState('ALL');
 
-  // Fetch real tickets from backend
   useEffect(() => {
-    apiFetch<ApiTicket[]>('/api/tickets')
-      .then(tickets => {
-        if (tickets && tickets.length > 0) {
-          setGrievances(tickets.map(mapTicket));
-        }
-      })
-      .catch((err) => console.error('Failed to load live tickets', err))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        const res = await apiFetch<ApiTicket[]>('/api/tickets');
+        if (res) setTickets(res.map(mapTicket));
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    const interval = setInterval(fetchData, 15000);
+    return () => clearInterval(interval);
   }, []);
 
-  /* simulated incoming voice call toast */
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setToast({ msg: 'New Voice Intake', sub: 'GR-8870 — Water Supply · Ward 04 (Hindi)' });
-    }, 3200);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 6000);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const handleResolve = async (id: string) => {
-    setResolved(prev => new Set([...prev, id]));
-    // Call backend if it's a numeric ID (real ticket)
-    const numId = Number(id);
-    if (!isNaN(numId) && numId > 0) {
-      apiFetch(`/api/tickets/${numId}/resolve`, { method: 'POST' }).catch(() => {});
-    }
+  const handleResolve = (id: string) => {
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'RESOLVED' as Status } : t));
+    apiFetch(`/api/tickets/${id}/resolve`, { method: 'POST' }).catch(console.error);
   };
 
-  const wards      = ['ALL', ...Array.from(new Set(grievances.map(g => g.ward)))];
-  const severities = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
-  const statusTabs: FilterStatus[] = ['ALL', 'OPEN', 'IN-PROGRESS', 'RESOLVED'];
+  const filtered = useMemo(() => {
+    return tickets.filter(t => {
+      if (filterWard !== 'ALL' && t.wardName !== filterWard) return false;
+      if (filterSev !== 'ALL' && t.severity !== filterSev) return false;
+      return true;
+    });
+  }, [tickets, filterWard, filterSev]);
 
-  const data = grievances.map(g =>
-    resolved.has(g.id) ? { ...g, status: 'RESOLVED' as Status } : g
-  );
+  const stats = useMemo(() => {
+    const wards = Array.from(new Set(tickets.map(t => t.wardName))).sort();
+    const wardData = wards.map(w => ({
+      name: w.replace('Ward ', 'W'),
+      unresolved: tickets.filter(t => t.wardName === w && t.status !== 'RESOLVED').length
+    }));
 
-  const filtered = data.filter(g => {
-    if (filterStatus !== 'ALL' && g.status !== filterStatus) return false;
-    if (filterSeverity !== 'ALL' && g.severity !== filterSeverity) return false;
-    if (filterWard !== 'ALL' && g.ward !== filterWard) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      if (!g.refId.toLowerCase().includes(q) && !g.category.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+    const slaData = [
+      { time: '08:00', breaches: 2 },
+      { time: '10:00', breaches: 5 },
+      { time: '12:00', breaches: 3 },
+      { time: '14:00', breaches: 8 },
+      { time: '16:00', breaches: 4 },
+      { time: '18:00', breaches: 6 },
+    ];
 
-  const openCount    = data.filter(g => g.status !== 'RESOLVED').length;
-  const resolvedCount= data.filter(g => g.status === 'RESOLVED').length;
-  const breachCount  = data.filter(g => g.severity === 'CRITICAL' && g.status !== 'RESOLVED').length;
+    return { wardData, slaData };
+  }, [tickets]);
 
   return (
     <Layout>
-      <div style={{ padding: '28px 30px', maxWidth: '1080px' }}>
-
-        {loading && (
-          <div style={{
-            fontFamily: 'var(--f-mono)', fontSize: '10px', color: 'var(--ink-4)',
-            letterSpacing: '0.1em', marginBottom: '16px',
-          }}>SYNCING WITH BACKEND...</div>
-        )}
-
-        {/* ── KPI row ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3,1fr)',
-          gap: '1px',
-          background: 'var(--border)',
-          marginBottom: '30px',
-        }}>
-          {[
-            { label: 'AWAITING ACTION',  value: openCount,     accent: 'var(--ink)',  sub: 'total open' },
-            { label: 'RESOLVED TODAY',   value: resolvedCount, accent: 'var(--green)',sub: 'this shift' },
-            { label: 'BREACH RISK',      value: breachCount,   accent: 'var(--red)',  sub: 'critical · SLA' },
-          ].map(k => (
-            <div key={k.label} style={{
-              background: 'var(--surface)',
-              padding: '22px 24px 20px',
-            }}>
-              <div style={{
-                fontFamily: 'var(--f-mono)',
-                fontSize: '9px', color: 'var(--ink-4)',
-                letterSpacing: '0.14em', marginBottom: '10px',
-              }}>{k.label}</div>
-              <div style={{
-                fontFamily: 'var(--f-serif)',
-                fontSize: '52px', fontStyle: 'italic',
-                color: k.accent, lineHeight: 1,
-              }}>{k.value}</div>
-              <div style={{
-                fontFamily: 'var(--f-mono)',
-                fontSize: '9px', color: 'var(--ink-4)',
-                marginTop: '8px', letterSpacing: '0.06em',
-              }}>{k.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Filter bar ── */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap',
-          gap: '10px', alignItems: 'center',
-          marginBottom: '14px',
-        }}>
-          {/* search */}
-          <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: '260px' }}>
-            <svg style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.35 }}
-              width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <circle cx="5" cy="5" r="4" stroke="var(--ink)" strokeWidth="1.2"/>
-              <line x1="8" y1="8" x2="11" y2="11" stroke="var(--ink)" strokeWidth="1.2"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search ID or category..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                width: '100%', padding: '8px 10px 8px 28px',
-                border: '1px solid var(--border)', background: 'transparent',
-                fontFamily: 'var(--f-mono)',
-                fontSize: '11px', color: 'var(--ink)', outline: 'none',
-              }}
-            />
-          </div>
-
-          {/* status tabs */}
-          <div style={{ display: 'flex' }}>
-            {statusTabs.map((s, i) => (
-              <button key={s} onClick={() => setFilterStatus(s)} style={{
-                padding: '8px 14px',
-                border: '1px solid var(--border)',
-                marginLeft: i > 0 ? '-1px' : '0',
-                background: filterStatus === s ? 'var(--ink)' : 'transparent',
-                color: filterStatus === s ? 'var(--bg)' : 'var(--ink-3)',
-                fontFamily: 'var(--f-mono)',
-                fontSize: '10px', letterSpacing: '0.08em',
-                cursor: 'pointer',
-              }}>{s}</button>
-            ))}
-          </div>
-
-          {/* severity */}
-          <select
-            value={filterSeverity}
-            onChange={e => setFilterSeverity(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              fontFamily: 'var(--f-mono)',
-              fontSize: '10px', color: 'var(--ink-2)',
-              outline: 'none', cursor: 'pointer',
-              letterSpacing: '0.06em',
-            }}
-          >
-            {severities.map(s => <option key={s} value={s}>{s === 'ALL' ? 'All Severity' : s}</option>)}
-          </select>
-
-          {/* ward */}
-          <select
-            value={filterWard}
-            onChange={e => setFilterWard(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              fontFamily: 'var(--f-mono)',
-              fontSize: '10px', color: 'var(--ink-2)',
-              outline: 'none', cursor: 'pointer',
-              letterSpacing: '0.06em',
-            }}
-          >
-            {wards.map(w => <option key={w} value={w}>{w === 'ALL' ? 'All Wards' : w}</option>)}
-          </select>
-        </div>
-
-        {/* ── Table ── */}
-        <div style={{ border: '1px solid var(--border)' }}>
-          {/* table head label */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '11px 16px',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--bg-raised)',
-          }}>
-            <span style={{
-              fontFamily: 'var(--f-mono)',
-              fontSize: '9px', color: 'var(--ink-3)',
-              letterSpacing: '0.14em',
-            }}>OPERATIONAL LEDGER</span>
-            <span style={{
-              fontFamily: 'var(--f-mono)',
-              fontSize: '9px', color: 'var(--ink-4)',
-            }}>{filtered.length} records</span>
-          </div>
-
-          {/* col headers */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '90px 148px 108px 148px 110px 108px 1fr',
-            padding: '9px 16px',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--bg-raised)',
-          }}>
-            {['REF ID','CATEGORY','SEVERITY','WARD','STATUS','SLA','ACTIONS'].map(h => (
-              <span key={h} style={{
-                fontFamily: 'var(--f-mono)',
-                fontSize: '9px', color: 'var(--ink-4)',
-                letterSpacing: '0.12em',
-              }}>{h}</span>
-            ))}
-          </div>
-
-          {filtered.length === 0 ? (
-            <div style={{
-              padding: '48px 16px', textAlign: 'center',
-              fontFamily: 'var(--f-mono)',
-              fontSize: '11px', color: 'var(--ink-4)',
-            }}>
-              No records match current filters.
-            </div>
-          ) : (
-            filtered.map((g, i) => (
-              <div
-                key={g.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '90px 148px 108px 148px 110px 108px 1fr',
-                  padding: '13px 16px',
-                  borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
-                  alignItems: 'center',
-                  background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)',
-                }}
-              >
-                <span style={{
-                  fontFamily: 'var(--f-serif)',
-                  fontSize: '15px', fontStyle: 'italic',
-                  color: 'var(--ink)',
-                }}>{g.refId}</span>
-
-                <span style={{
-                  fontFamily: 'var(--f-sans)',
-                  fontSize: '12px', color: 'var(--ink-2)',
-                }}>{g.category}</span>
-
-                <span><SevBadge s={g.severity} /></span>
-
+      <div className="space-y-8 max-w-[1400px] mx-auto pt-6 pb-12 animate-fade-in px-4 lg:px-0">
+        
+        {/* Analytics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 relative overflow-hidden group h-[350px]">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--blue-glow)] blur-[100px] rounded-full -mr-32 -mt-32 opacity-20" />
+            <div className="relative z-10 flex flex-col h-full">
+              <header className="flex items-center justify-between mb-8">
                 <div>
-                  <div style={{ fontFamily: 'var(--f-sans)', fontSize: '12px', color: 'var(--ink)' }}>{g.ward}</div>
-                  <div style={{ fontFamily: 'var(--f-mono)', fontSize: '9px', color: 'var(--ink-4)', marginTop: '2px' }}>{g.wardName}</div>
+                  <h3 className="text-[16px] font-bold font-display tracking-tight">Municipal Response Latency</h3>
+                  <p className="text-[11px] text-[var(--ink-4)] font-medium uppercase tracking-widest mt-1">SLA Breach Points by Hour</p>
                 </div>
-
-                <span><StatusPill s={g.status} /></span>
-
-                <span style={{
-                  fontFamily: 'var(--f-mono)',
-                  fontSize: '12px',
-                  color: g.slaSeconds < 5000 && g.status !== 'RESOLVED' ? 'var(--red)' : 'var(--ink-3)',
-                  fontWeight: g.slaSeconds < 5000 ? 500 : 400,
-                }}>
-                  {g.status === 'RESOLVED' ? '—' : g.slaTimer}
-                </span>
-
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    onClick={() => setActiveGr(g)}
-                    style={{
-                      padding: '5px 10px',
-                      border: '1px solid var(--border)',
-                      background: 'transparent',
-                      fontFamily: 'var(--f-mono)',
-                      fontSize: '9px', letterSpacing: '0.08em',
-                      color: 'var(--ink-3)', cursor: 'pointer',
-                    }}
-                  >
-                    EVIDENCE
-                  </button>
-                  {g.status !== 'RESOLVED' && (
-                    <button
-                      onClick={() => handleResolve(g.id)}
-                      style={{
-                        padding: '5px 10px',
-                        border: 'none',
-                        background: 'var(--ink)',
-                        color: 'var(--bg)',
-                        fontFamily: 'var(--f-mono)',
-                        fontSize: '9px', letterSpacing: '0.08em',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      RESOLVE
-                    </button>
-                  )}
+                <div className="p-2 bg-[var(--surface-raised)] rounded-lg">
+                  <Clock size={16} className="text-[var(--blue)]" />
                 </div>
+              </header>
+              <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.slaData}>
+                    <defs>
+                      <linearGradient id="colorBreach" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--blue)" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="var(--blue)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="0" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--ink-4)' }} dy={10} />
+                    <YAxis hide />
+                    <Tooltip />
+                    <Area 
+                      type="monotone" 
+                      dataKey="breaches" 
+                      stroke="var(--blue)" 
+                      strokeWidth={3} 
+                      fillOpacity={1} 
+                      fill="url(#colorBreach)" 
+                      animationDuration={1500}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            </div>
+          </Card>
 
-      {/* ── Toast ── */}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: '28px', left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'var(--ink)',
-          color: 'var(--bg)',
-          padding: '14px 20px',
-          minWidth: '360px', maxWidth: '440px',
-          display: 'flex', gap: '12px', alignItems: 'flex-start',
-          border: '1px solid rgba(255,255,255,0.08)',
-          zIndex: 300,
-        }}>
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ marginTop: '1px', flexShrink: 0 }}>
-            <path d="M2 9.5V4a4.5 4.5 0 019 0v5.5" stroke="var(--bg)" strokeWidth="1"/>
-            <path d="M2 9.5h9" stroke="var(--bg)" strokeWidth="1"/>
-            <circle cx="6.5" cy="11.5" r="1" fill="var(--bg)"/>
-          </svg>
-          <div style={{ flex: 1 }}>
-            <div style={{
-              fontFamily: 'var(--f-mono)',
-              fontSize: '10px', letterSpacing: '0.1em',
-              marginBottom: '3px',
-            }}>{toast.msg}</div>
-            <div style={{
-              fontFamily: 'var(--f-mono)',
-              fontSize: '10px', color: 'rgba(255,255,255,0.5)',
-            }}>{toast.sub}</div>
+          <Card className="h-[350px] flex flex-col">
+            <header className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-[16px] font-bold font-display tracking-tight">Geographic Density</h3>
+                <p className="text-[11px] text-[var(--ink-4)] font-medium uppercase tracking-widest mt-1">Unresolved Issues</p>
+              </div>
+            </header>
+            <div className="flex-1 min-h-0">
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={stats.wardData}>
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--ink-4)' }} />
+                   <Tooltip cursor={{ fill: 'var(--surface-raised)' }} />
+                   <Bar dataKey="unresolved" radius={[6, 6, 0, 0]}>
+                     {stats.wardData.map((_entry, index) => (
+                       <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--blue)' : 'var(--border-hi)'} />
+                     ))}
+                   </Bar>
+                 </BarChart>
+               </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+
+        {/* Operational Table */}
+        <Card className="!p-0 overflow-hidden shadow-2xl">
+          <div className="px-8 py-6 flex items-center justify-between bg-[var(--surface-raised)]/30 backdrop-blur-sm border-b border-[var(--border)]">
+            <div className="flex items-center gap-4">
+               <div>
+                 <h3 className="text-[16px] font-bold font-display tracking-tight">Active Operation Queue</h3>
+                 <p className="text-[11px] text-[var(--ink-4)] font-medium mt-1 uppercase tracking-[0.1em]">Real-time system telemetry</p>
+               </div>
+               <div className="flex items-center gap-2 px-3 py-1 bg-[#000] border border-[var(--border)] rounded-full group cursor-default">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse shadow-[0_0_8px_var(--green)]" />
+                  <span className="text-[10px] font-bold font-mono text-[var(--ink-2)]">{filtered.length} Live Feeds</span>
+               </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
+                <select 
+                  value={filterWard}
+                  onChange={e => setFilterWard(e.target.value)}
+                  className="bg-[var(--surface)] border border-[var(--border)] text-[11px] font-bold px-4 py-2 rounded-lg outline-none focus:border-[var(--blue)] transition-all cursor-pointer"
+                >
+                  <option value="ALL">All Wards</option>
+                  {[1,2,3,4,5].map(w => <option key={w} value={`Ward ${w}`}>Ward {w}</option>)}
+                </select>
+                <select 
+                  value={filterSev}
+                  onChange={e => setFilterSev(e.target.value)}
+                  className="bg-[var(--surface)] border border-[var(--border)] text-[11px] font-bold px-4 py-2 rounded-lg outline-none focus:border-[var(--blue)] transition-all cursor-pointer"
+                >
+                  <option value="ALL">All Urgency</option>
+                  <option value="HIGH">High</option>
+                  <option value="CRITICAL">Critical</option>
+                  <option value="MEDIUM">Medium</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <button onClick={() => setToast(null)} style={{
-            background: 'none', border: 'none',
-            color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
-            fontSize: '16px', lineHeight: 1, flexShrink: 0,
-          }}>×</button>
-        </div>
-      )}
 
-      {/* ── Modal ── */}
-      {activeGr && (
-        <Modal
-          gr={activeGr}
-          onClose={() => setActiveGr(null)}
-          onResolve={handleResolve}
-        />
-      )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[var(--bg-subtle)]/50">
+                  <th className="pl-8 pr-4 py-4 text-[11px] uppercase tracking-[0.15em] text-[var(--ink-5)] font-bold">Reference ID</th>
+                  <th className="px-4 py-4 text-[11px] uppercase tracking-[0.15em] text-[var(--ink-5)] font-bold">Category</th>
+                  <th className="px-4 py-4 text-[11px] uppercase tracking-[0.15em] text-[var(--ink-5)] font-bold">Location</th>
+                  <th className="px-4 py-4 text-[11px] uppercase tracking-[0.15em] text-[var(--ink-5)] font-bold">Urgency</th>
+                  <th className="px-4 py-4 text-[11px] uppercase tracking-[0.15em] text-[var(--ink-5)] font-bold">SLA State</th>
+                  <th className="px-4 py-4 text-[11px] uppercase tracking-[0.15em] text-[var(--ink-5)] font-bold text-right pr-8">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {filtered.map((t) => (
+                  <tr 
+                    key={t.id} 
+                    onClick={() => setActiveTicket(t)}
+                    className="hover:bg-[var(--surface-hover)] transition-all duration-200 cursor-pointer group"
+                  >
+                    <td className="pl-8 pr-4 py-5">
+                      <div className="flex items-center gap-3">
+                         <div className={`w-2 h-2 rounded-full ${t.status === 'RESOLVED' ? 'bg-[var(--green)]' : 'bg-[var(--blue)] animate-pulse shadow-[0_0_8px_var(--blue)]'}`} />
+                         <span className="font-bold text-[14px] text-[var(--ink)] tracking-tight">{t.refId}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-5 text-[13px] text-[var(--ink-2)] font-medium">{t.category}</td>
+                    <td className="px-4 py-5 text-[13px] text-[var(--ink-3)] font-medium">{t.wardName}</td>
+                    <td className="px-4 py-5"><SevBadge s={t.severity} /></td>
+                    <td className="px-4 py-5 font-mono text-[12px] font-bold">
+                       <span className={t.slaTimer === 'BREACHED' ? 'text-[var(--red)]' : 'text-[var(--ink-4)]'}>
+                         {t.status === 'RESOLVED' ? <div className="text-[var(--green)]">CLOSED</div> : t.slaTimer}
+                       </span>
+                    </td>
+                    <td className="px-4 py-5 text-right pr-8">
+                       <div className="flex items-center justify-end gap-2">
+                         <StatusBadge s={t.status} />
+                         <div className="p-2 rounded-lg group-hover:bg-[var(--blue-glow)] group-hover:text-[var(--blue)] transition-all">
+                           <ArrowUpRight size={18} />
+                         </div>
+                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filtered.length === 0 && (
+              <div className="py-20 flex flex-col items-center justify-center text-[var(--ink-5)] gap-4">
+                <AlertCircle size={48} className="opacity-20" />
+                <p className="text-[12px] font-bold uppercase tracking-[0.2em]">Queue Synchronized • No Records</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {activeTicket && (
+          <TicketModal 
+            ticket={activeTicket} 
+            onClose={() => setActiveTicket(null)} 
+            onResolve={handleResolve}
+          />
+        )}
+      </div>
     </Layout>
   );
 }
+

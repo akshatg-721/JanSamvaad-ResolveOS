@@ -17,10 +17,13 @@ CREATE TABLE IF NOT EXISTS tickets (
   ref VARCHAR(20) NOT NULL UNIQUE,
   category VARCHAR(50) NOT NULL,
   ward_id INTEGER REFERENCES wards(id) ON DELETE SET NULL,
-  severity VARCHAR(20) NOT NULL CHECK (severity IN ('High', 'Medium', 'Low')),
-  status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+  severity VARCHAR(20) NOT NULL CHECK (severity IN ('Critical', 'High', 'Medium', 'Low')),
+  status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in-progress', 'in_progress', 'resolved', 'closed')),
   sla_deadline TIMESTAMPTZ,
   evidence_url TEXT,
+  resolve_token VARCHAR(64),
+  feedback_rating INTEGER,
+  feedback_text TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   closed_at TIMESTAMPTZ
 );

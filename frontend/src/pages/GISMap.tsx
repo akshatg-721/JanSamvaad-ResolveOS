@@ -2,13 +2,28 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { apiFetch } from '../api/client';
 import { Grievance, Severity, ApiTicket, mapTicket } from '../types';
+import { 
+  Search, 
+  Filter, 
+  CloudSun, 
+  BarChart3, 
+  Ruler, 
+  Download, 
+  Maximize2,
+  ChevronRight,
+  ChevronLeft,
+  X,
+  Map as MapIcon,
+  Layers,
+  Zap
+} from 'lucide-react';
 
 /* ── severity colours ── */
 const SEV: Record<Severity, { pin: string; ring: string; label: string }> = {
-  CRITICAL: { pin: '#C53030', ring: 'rgba(197,48,48,0.25)',  label: 'Critical' },
-  HIGH:     { pin: '#C05621', ring: 'rgba(192,86,33,0.25)',  label: 'High' },
-  MEDIUM:   { pin: '#B7791F', ring: 'rgba(183,121,31,0.25)', label: 'Medium' },
-  LOW:      { pin: '#718096', ring: 'rgba(113,128,150,0.2)', label: 'Low' },
+  CRITICAL: { pin: '#ef4444', ring: 'rgba(239,68,68,0.3)',  label: 'Critical' },
+  HIGH:     { pin: '#f97316', ring: 'rgba(249,115,22,0.3)',  label: 'High' },
+  MEDIUM:   { pin: '#f59e0b', ring: 'rgba(245,158,11,0.3)', label: 'Medium' },
+  LOW:      { pin: '#94a3b8', ring: 'rgba(148,163,184,0.2)', label: 'Low' },
 };
 
 const CAT_ICONS: Record<string, string> = {
@@ -27,13 +42,11 @@ const CAT_ICONS: Record<string, string> = {
 };
 
 const WARDS = [
-  { id: 'w12', name: 'Sarojini Nagar',  ward: 'Ward 12', coords: [[28.555,77.183],[28.555,77.215],[28.592,77.215],[28.592,77.183],[28.555,77.183]] as [number,number][] },
-  { id: 'w04', name: 'Karol Bagh',      ward: 'Ward 04', coords: [[28.636,77.175],[28.636,77.208],[28.668,77.208],[28.668,77.175],[28.636,77.175]] as [number,number][] },
-  { id: 'w07', name: 'Lajpat Nagar',    ward: 'Ward 07', coords: [[28.550,77.221],[28.550,77.250],[28.584,77.250],[28.584,77.221],[28.550,77.221]] as [number,number][] },
-  { id: 'w19', name: 'Dwarka Sec-7',    ward: 'Ward 19', coords: [[28.575,77.030],[28.575,77.060],[28.608,77.060],[28.608,77.030],[28.575,77.030]] as [number,number][] },
-  { id: 'w02', name: 'Connaught Place', ward: 'Ward 02', coords: [[28.623,77.207],[28.623,77.234],[28.644,77.234],[28.644,77.207],[28.623,77.207]] as [number,number][] },
-  { id: 'w31', name: 'Rohini Sec-3',    ward: 'Ward 31', coords: [[28.708,77.112],[28.708,77.142],[28.732,77.142],[28.732,77.112],[28.708,77.112]] as [number,number][] },
-  { id: 'w09', name: 'Janakpuri',       ward: 'Ward 09', coords: [[28.616,77.070],[28.616,77.100],[28.642,77.100],[28.642,77.070],[28.616,77.070]] as [number,number][] },
+  { id: 'w1', name: 'Connaught Place', ward: 'Ward 1', coords: [[28.610,77.200],[28.610,77.230],[28.630,77.230],[28.630,77.200],[28.610,77.200]] as [number,number][] },
+  { id: 'w2', name: 'Minto Road',      ward: 'Ward 2', coords: [[28.630,77.200],[28.630,77.230],[28.650,77.230],[28.650,77.200],[28.630,77.200]] as [number,number][] },
+  { id: 'w3', name: 'Bengali Market',  ward: 'Ward 3', coords: [[28.610,77.230],[28.610,77.260],[28.630,77.260],[28.630,77.230],[28.610,77.230]] as [number,number][] },
+  { id: 'w4', name: 'Gole Market',     ward: 'Ward 4', coords: [[28.610,77.170],[28.610,77.200],[28.630,77.200],[28.630,77.170],[28.610,77.170]] as [number,number][] },
+  { id: 'w5', name: 'Chanakyapuri',    ward: 'Ward 5', coords: [[28.580,77.170],[28.580,77.200],[28.610,77.200],[28.610,77.170],[28.580,77.170]] as [number,number][] },
 ];
 
 type MapLayer = 'standard' | 'satellite' | 'dark' | 'terrain';
@@ -72,28 +85,22 @@ function weatherDesc(code: number): { label: string; icon: string } {
   return { label: 'Unknown', icon: '—' };
 }
 
-/* ── small icon button for left toolbar ── */
+/* ── Refined tool button ── */
 function ToolBtn({ onClick, active, title, children }: {
   onClick: () => void; active?: boolean; title?: string; children: React.ReactNode;
 }) {
-  const [hover, setHover] = useState(false);
   return (
     <button
       title={title}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width: '36px', height: '36px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: active ? 'var(--ink)' : hover ? 'var(--bg-raised)' : 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderBottom: 'none',
-        color: active ? 'var(--bg)' : hover ? 'var(--ink)' : 'var(--ink-3)',
-        cursor: 'pointer', fontSize: '14px',
-        transition: 'all 0.12s',
-      }}
-    >{children}</button>
+      className={`w-12 h-12 flex items-center justify-center transition-all duration-200 border-b border-[var(--border)] first:rounded-t-2xl last:rounded-b-2xl last:border-b-0 ${
+        active 
+          ? 'bg-[var(--blue)] text-white' 
+          : 'bg-[#0A0A0A] text-[var(--ink-4)] hover:text-[var(--ink)] hover:bg-[var(--surface)]'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -106,15 +113,13 @@ export default function GISMap() {
   const heatLayer     = useRef<any>(null);
   const measureLayer  = useRef<any>(null);
   const geocodeMarker = useRef<any>(null);
-  // routeControl reserved for future routing feature
 
   const [selected,      setSelected]      = useState<string | null>(null);
   const [activeTool,    setActiveTool]    = useState<ActiveTool>('none');
-  const [mapLayer,      setMapLayer]      = useState<MapLayer>('standard');
+  const [mapLayer,      setMapLayer]      = useState<MapLayer>('dark');
   const [showWards,     setShowWards]     = useState(true);
   const [showHeat,      setShowHeat]      = useState(false);
   const [showMarkers,   setShowMarkers]   = useState(true);
-  // showClusters reserved for future cluster feature
   const [filterSev,     setFilterSev]     = useState<Severity[]>(['CRITICAL','HIGH','MEDIUM','LOW']);
   const [filterStatus,  setFilterStatus]  = useState<string[]>(['OPEN','IN-PROGRESS','RESOLVED']);
   const [filterCat,     setFilterCat]     = useState<string[]>([]);
@@ -447,188 +452,157 @@ export default function GISMap() {
   };
 
   const isDark = mapLayer === 'dark';
-  // panelBg derived from isDark where needed inline
-  const panelText = isDark ? '#E2E8F0' : 'var(--ink)';
-  const panelBorder = isDark ? '#2D2D4A' : 'var(--border)';
-  const panelMuted = isDark ? '#9AA5B1' : 'var(--ink-3)';
-
+  const panelBorder = 'rgba(255,255,255,0.06)';
   const wdesc = weather ? weatherDesc(weather.weathercode) : null;
 
   return (
     <Layout>
-      <div style={{ position: 'relative', height: '100%', display: 'flex', overflow: 'hidden' }}>
+      <div className="relative h-full flex overflow-hidden bg-[#030303]">
 
-        {/* ── top bar ── */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 400,
-          display: 'flex', alignItems: 'center', gap: '0',
-          background: isDark ? 'rgba(15,15,26,0.95)' : 'rgba(242,240,236,0.95)',
-          borderBottom: `1px solid ${panelBorder}`,
-          backdropFilter: 'blur(8px)',
-          height: '40px', paddingLeft: '12px',
-        }}>
-          {/* layer switcher */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', borderRight: `1px solid ${panelBorder}`, paddingRight: '12px', marginRight: '12px' }}>
-            {(Object.keys(TILE_URLS) as MapLayer[]).map(k => (
-              <button key={k} onClick={() => setMapLayer(k)} style={{
-                fontFamily: 'var(--f-mono)', fontSize: '9px', letterSpacing: '0.1em',
-                padding: '4px 10px', background: mapLayer === k ? (isDark ? '#E2E8F0' : 'var(--ink)') : 'transparent',
-                color: mapLayer === k ? (isDark ? '#0F0F1A' : 'var(--bg)') : panelMuted,
-                border: 'none', cursor: 'pointer', textTransform: 'uppercase',
-                transition: 'all 0.12s',
-              }}>
-                {TILE_URLS[k].label}
-              </button>
-            ))}
+        {/* ── Top Bar ── */}
+        <div className="absolute top-4 left-4 right-4 z-[400] flex items-center justify-between pointer-events-none">
+          <div className="flex items-center gap-3 p-1.5 glass rounded-2xl border-[var(--border-hi)] pointer-events-auto shadow-2xl">
+            <div className="flex items-center gap-1 border-r border-[rgba(255,255,255,0.1)] pr-3 mr-1">
+              {(Object.keys(TILE_URLS) as MapLayer[]).map(k => (
+                <button 
+                  key={k} 
+                  onClick={() => setMapLayer(k)} 
+                  className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    mapLayer === k 
+                      ? 'bg-[var(--blue)] text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                      : 'text-[var(--ink-4)] hover:text-[var(--ink)] hover:bg-white/5'
+                  }`}
+                >
+                  {TILE_URLS[k].label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 pr-2">
+              {[
+                { label: 'Wards',   val: showWards,   set: setShowWards, icon: <Layers size={14}/> },
+                { label: 'Feeds', val: showMarkers, set: setShowMarkers, icon: <MapIcon size={14}/> },
+                { label: 'Heat',    val: showHeat,    set: setShowHeat, icon: <Zap size={14}/> },
+              ].map(item => (
+                <button 
+                  key={item.label} 
+                  onClick={() => item.set(!item.val)} 
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
+                    item.val 
+                      ? 'bg-white/10 border-white/20 text-white shadow-lg' 
+                      : 'bg-transparent border-transparent text-[var(--ink-4)] hover:text-[var(--ink)] hover:bg-white/5'
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* toggle pills */}
-          {[
-            { label: 'WARDS',   val: showWards,   set: setShowWards },
-            { label: 'MARKERS', val: showMarkers, set: setShowMarkers },
-            { label: 'HEAT',    val: showHeat,    set: setShowHeat },
-          ].map(item => (
-            <button key={item.label} onClick={() => item.set(!item.val)} style={{
-              fontFamily: 'var(--f-mono)', fontSize: '9px', letterSpacing: '0.1em',
-              padding: '3px 9px', marginRight: '4px',
-              background: item.val ? (isDark ? 'rgba(255,255,255,0.1)' : 'var(--bg-raised)') : 'transparent',
-              color: item.val ? panelText : panelMuted,
-              border: `1px solid ${item.val ? panelBorder : 'transparent'}`,
-              cursor: 'pointer', textTransform: 'uppercase', transition: 'all 0.12s',
-            }}>
-              {item.label}
-            </button>
-          ))}
+          <div className="flex items-center gap-4">
+             {/* Summary Stats Floating */}
+             <div className="hidden lg:flex items-center gap-6 px-6 py-3 glass rounded-2xl border-[var(--border-hi)] pointer-events-auto">
+                {(['CRITICAL','HIGH','MEDIUM','LOW'] as Severity[]).map(s => {
+                  const cnt = filtered.filter(g => g.severity === s).length;
+                  if (!cnt) return null;
+                  return (
+                    <div key={s} className="flex items-center gap-2 group cursor-default">
+                      <div className="w-2 h-2 rounded-full shadow-lg" style={{ background: SEV[s].pin, boxShadow: `0 0 10px ${SEV[s].ring}` }} />
+                      <span className="text-[11px] font-bold font-mono text-[var(--ink-2)] group-hover:text-white transition-colors">{cnt} {s}</span>
+                    </div>
+                  );
+                })}
+             </div>
 
-          {/* spacer */}
-          <div style={{ flex: 1 }} />
-
-          {/* summary chips */}
-          <div style={{ display: 'flex', gap: '16px', paddingRight: '16px', alignItems: 'center' }}>
-            {(['CRITICAL','HIGH','MEDIUM','LOW'] as Severity[]).map(s => {
-              const cnt = filtered.filter(g => g.severity === s).length;
-              if (!cnt) return null;
-              return (
-                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: SEV[s].pin }} />
-                  <span style={{ fontFamily: 'var(--f-mono)', fontSize: '9px', color: panelMuted }}>{cnt} {s}</span>
-                </div>
-              );
-            })}
+             <button 
+               onClick={() => setPanelOpen(p => !p)} 
+               className="p-3 glass rounded-2xl border-[var(--border-hi)] text-[var(--ink-4)] hover:text-white transition-all pointer-events-auto shadow-2xl active:scale-95"
+             >
+               {panelOpen ? <ChevronRight size={20} /> : <Maximize2 size={20} />}
+             </button>
           </div>
-
-          {/* panel toggle */}
-          <button onClick={() => setPanelOpen(p => !p)} style={{
-            height: '40px', paddingInline: '12px',
-            background: 'transparent', border: 'none', borderLeft: `1px solid ${panelBorder}`,
-            color: panelMuted, cursor: 'pointer', fontFamily: 'var(--f-mono)', fontSize: '9px',
-            letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '5px',
-          }}>
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <rect x="1" y="1" width="3.5" height="9" stroke="currentColor" strokeWidth="1"/>
-              <rect x="6.5" y="1" width="3.5" height="9" stroke="currentColor" strokeWidth="1"/>
-            </svg>
-            {panelOpen ? 'HIDE' : 'SHOW'} PANEL
-          </button>
         </div>
 
-        {/* ── left toolbar ── */}
-        <div style={{
-          position: 'absolute', left: 12, top: 52, zIndex: 400,
-          display: 'flex', flexDirection: 'column', gap: '0',
-          border: `1px solid ${panelBorder}`,
-          boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
-        }}>
+        {/* ── Left Toolbar ── */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-[400] flex flex-col glass rounded-2xl border-[var(--border-hi)] overflow-hidden shadow-2xl">
           <ToolBtn title="Search Location" onClick={() => toggleTool('search')}  active={activeTool==='search'}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.2"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+            <Search size={20} />
           </ToolBtn>
           <ToolBtn title="Filter Grievances" onClick={() => toggleTool('filter')} active={activeTool==='filter'}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><line x1="1" y1="3" x2="12" y2="3" stroke="currentColor" strokeWidth="1.2"/><line x1="3" y1="6.5" x2="10" y2="6.5" stroke="currentColor" strokeWidth="1.2"/><line x1="5" y1="10" x2="8" y2="10" stroke="currentColor" strokeWidth="1.2"/></svg>
+            <Filter size={20} />
           </ToolBtn>
-          <ToolBtn title="Weather Data" onClick={() => toggleTool('weather')} active={activeTool==='weather'}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="7.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2"/><path d="M3 10c0-1.7 1.3-3 3-3h3.5a2 2 0 010 4H5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+          <ToolBtn title="Weather Overlay" onClick={() => toggleTool('weather')} active={activeTool==='weather'}>
+            <CloudSun size={20} />
           </ToolBtn>
-          <ToolBtn title="Ward Statistics" onClick={() => toggleTool('stats')} active={activeTool==='stats'}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="8" width="2.5" height="4" stroke="currentColor" strokeWidth="1.1"/><rect x="5.25" y="5" width="2.5" height="7" stroke="currentColor" strokeWidth="1.1"/><rect x="9.5" y="2" width="2.5" height="10" stroke="currentColor" strokeWidth="1.1"/></svg>
+          <ToolBtn title="Ward Intelligence" onClick={() => toggleTool('stats')} active={activeTool==='stats'}>
+            <BarChart3 size={20} />
           </ToolBtn>
-          <ToolBtn title="Measure Distance" onClick={() => { toggleTool('measure'); setMeasuring(t => !t); }} active={measuring}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><line x1="1" y1="12" x2="12" y2="1" stroke="currentColor" strokeWidth="1.2"/><line x1="1" y1="10" x2="1" y2="12" stroke="currentColor" strokeWidth="1.2"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" strokeWidth="1.2"/><line x1="4" y1="9" x2="5.5" y2="9" stroke="currentColor" strokeWidth="1"/><line x1="7" y1="6" x2="8.5" y2="6" stroke="currentColor" strokeWidth="1"/></svg>
+          <ToolBtn title="Spatial Measure" onClick={() => { toggleTool('measure'); setMeasuring(t => !t); }} active={measuring}>
+            <Ruler size={20} />
           </ToolBtn>
-          <ToolBtn title="Export CSV" onClick={exportCSV}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 3h5l2.5 2.5V11H3V3z" stroke="currentColor" strokeWidth="1.1"/><polyline points="6.5,6 6.5,10 4.5,8" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/><line x1="8.5" y1="8" x2="6.5" y2="10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg>
-          </ToolBtn>
-          <ToolBtn title="Fit to Delhi" onClick={() => mapInst.current?.flyTo([28.630, 77.150], 11, { duration: 1 })}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="4" height="4" stroke="currentColor" strokeWidth="1.1"/><rect x="8" y="1" width="4" height="4" stroke="currentColor" strokeWidth="1.1"/><rect x="1" y="8" width="4" height="4" stroke="currentColor" strokeWidth="1.1"/><rect x="8" y="8" width="4" height="4" stroke="currentColor" strokeWidth="1.1"/></svg>
+          <ToolBtn title="Export Operations" onClick={exportCSV}>
+            <Download size={20} />
           </ToolBtn>
         </div>
 
-        {/* ── tool panels (left) ── */}
+        {/* ── Tool Panels (Left) ── */}
         {activeTool !== 'none' && (
-          <div style={{
-            position: 'absolute', left: 60, top: 52, zIndex: 500,
-            background: isDark ? 'rgba(15,15,26,0.97)' : 'rgba(242,240,236,0.97)',
-            border: `1px solid ${panelBorder}`,
-            backdropFilter: 'blur(12px)',
-            width: '260px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
-            animation: 'slide-in-right 0.18s ease',
-          }}>
+          <div className="absolute left-20 top-1/2 -translate-y-1/2 z-[500] w-[320px] glass rounded-3xl border-[var(--border-hi)] shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-hidden animate-slide-in-right">
             {/* ── SEARCH ── */}
             {activeTool === 'search' && (
-              <div style={{ padding: '12px' }}>
-                <div style={{ fontFamily: 'var(--f-mono)', fontSize: '9px', letterSpacing: '0.12em', color: panelMuted, marginBottom: '8px' }}>GEOCODE SEARCH</div>
-                <div style={{ position: 'relative' }}>
+              <div className="p-6">
+                <header className="flex items-center justify-between mb-6">
+                  <h3 className="text-[12px] font-bold uppercase tracking-[0.2em] text-[var(--ink-4)]">Geo-Intelligence</h3>
+                  <button onClick={() => setActiveTool('none')} className="text-[var(--ink-4)] hover:text-white"><X size={16}/></button>
+                </header>
+                <div className="relative group">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-4)] group-focus-within:text-[var(--blue)] transition-colors" />
                   <input
                     autoFocus
                     value={searchQuery}
                     onChange={e => { setSearchQuery(e.target.value); handleGeoSearch(e.target.value); }}
-                    placeholder="Search address, landmark…"
-                    style={{
-                      width: '100%', padding: '8px 10px',
-                      fontFamily: 'var(--f-mono)', fontSize: '11px',
-                      background: isDark ? 'rgba(255,255,255,0.05)' : 'var(--bg)',
-                      border: `1px solid ${panelBorder}`, color: panelText,
-                      outline: 'none',
-                    }}
+                    placeholder="Search coordinates or address..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-[13px] placeholder-[var(--ink-5)] outline-none focus:border-[var(--blue)] focus:bg-white/10 transition-all font-medium"
                   />
                   {searchLoading && (
-                    <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', animation: 'spin 1s linear infinite', width: '12px', height: '12px', border: '1.5px solid var(--border)', borderTopColor: 'var(--ink)', borderRadius: '50%' }} />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-white/10 border-t-[var(--blue)] rounded-full animate-spin" />
                   )}
                 </div>
                 {searchResults.length > 0 && (
-                  <div style={{ marginTop: '4px', borderTop: `1px solid ${panelBorder}` }}>
+                  <div className="mt-4 space-y-1">
                     {searchResults.map((r, i) => (
-                      <button key={i} onClick={() => flyToResult(r)} style={{
-                        width: '100%', textAlign: 'left', padding: '7px 10px',
-                        background: 'transparent', border: 'none', borderBottom: `1px solid ${panelBorder}`,
-                        cursor: 'pointer', color: panelText,
-                      }} onMouseEnter={e => (e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'var(--bg-raised)')}
-                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                        <div style={{ fontFamily: 'var(--f-mono)', fontSize: '10px', lineHeight: 1.4 }}>{r.display_name.substring(0, 60)}…</div>
-                        <div style={{ fontFamily: 'var(--f-mono)', fontSize: '9px', color: panelMuted, marginTop: '2px' }}>{parseFloat(r.lat).toFixed(4)}, {parseFloat(r.lon).toFixed(4)}</div>
+                      <button 
+                        key={i} 
+                        onClick={() => flyToResult(r)} 
+                        className="w-full text-left p-4 rounded-xl hover:bg-white/5 transition-all group"
+                      >
+                        <p className="text-[12px] font-bold text-[var(--ink-2)] group-hover:text-white transition-colors line-clamp-2">{r.display_name}</p>
+                        <p className="text-[10px] font-mono text-[var(--ink-4)] mt-1">{parseFloat(r.lat).toFixed(4)}, {parseFloat(r.lon).toFixed(4)}</p>
                       </button>
                     ))}
                   </div>
                 )}
                 {/* quick jumps */}
-                <div style={{ marginTop: '10px' }}>
-                  <div style={{ fontFamily: 'var(--f-mono)', fontSize: '8px', letterSpacing: '0.1em', color: panelMuted, marginBottom: '6px' }}>QUICK JUMP</div>
-                  {WARDS.map(w => (
-                    <button key={w.id} onClick={() => {
-                      const c = w.coords;
-                      const lat = (c[0][0] + c[2][0]) / 2;
-                      const lng = (c[0][1] + c[2][1]) / 2;
-                      mapInst.current?.flyTo([lat, lng], 14, { duration: 0.9 });
-                    }} style={{
-                      display: 'flex', justifyContent: 'space-between', width: '100%',
-                      padding: '5px 8px', background: 'transparent', border: 'none',
-                      cursor: 'pointer', color: panelText,
-                    }} onMouseEnter={e => (e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'var(--bg-raised)')}
-                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <span style={{ fontFamily: 'var(--f-mono)', fontSize: '10px' }}>{w.name}</span>
-                      <span style={{ fontFamily: 'var(--f-mono)', fontSize: '9px', color: panelMuted }}>{w.ward}</span>
-                    </button>
-                  ))}
+                <div className="mt-8">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-5)] mb-4">Strategic Sectors</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {WARDS.map(w => (
+                      <button 
+                        key={w.id} 
+                        onClick={() => {
+                          const c = w.coords;
+                          const lat = (c[0][0] + c[2][0]) / 2;
+                          const lng = (c[0][1] + c[2][1]) / 2;
+                          mapInst.current?.flyTo([lat, lng], 14, { duration: 0.9 });
+                        }} 
+                        className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group"
+                      >
+                        <span className="text-[12px] font-bold text-[var(--ink-2)] group-hover:text-white">{w.name}</span>
+                        <span className="text-[10px] font-mono text-[var(--ink-4)]">{w.ward}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

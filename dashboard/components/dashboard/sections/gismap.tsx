@@ -358,20 +358,6 @@ export function GisSection() {
               </Popup>
             </Marker>
         ))}
-
-        {layers.heatmap && filteredTickets.filter(t => t.severity === 'High' && t.latitude).map(t => (
-          <Circle 
-            key={`heat-${t.id}`}
-            center={[t.latitude, t.longitude]} 
-            radius={800} 
-            pathOptions={{ 
-              color: getUrgencyColor(t.severity), 
-              fillColor: getUrgencyColor(t.severity), 
-              fillOpacity: 0.15,
-              weight: 0
-            }} 
-          />
-        ))}
       </MapContainer>
     </div>
   );

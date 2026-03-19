@@ -1,0 +1,75 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Ward 1: Connaught Place", "type": "ward", "district": "New Delhi" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.215, 28.635], [77.225, 28.635], [77.225, 28.625], [77.215, 28.625], [77.215, 28.635]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Ward 2: Chanakyapuri", "type": "ward", "district": "New Delhi" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.185, 28.605], [77.205, 28.605], [77.205, 28.585], [77.185, 28.585], [77.185, 28.605]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Ward 3: Karol Bagh", "type": "ward", "district": "Central Delhi" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.175, 28.660], [77.195, 28.660], [77.195, 28.640], [77.175, 28.640], [77.175, 28.660]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Ward 4: Hauz Khas", "type": "ward", "district": "South Delhi" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.195, 28.560], [77.215, 28.560], [77.215, 28.540], [77.195, 28.540], [77.195, 28.560]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Ward 5: Dwarka Sector 6", "type": "ward", "district": "South West Delhi" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.050, 28.595], [77.070, 28.595], [77.070, 28.575], [77.050, 28.575], [77.050, 28.595]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Gurgaon: Cyber City", "type": "colony", "district": "Gurugram (NCR)" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.080, 28.495], [77.100, 28.495], [77.100, 28.475], [77.080, 28.475], [77.080, 28.495]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Noida: Sector 18", "type": "colony", "district": "Noida (NCR)" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [77.315, 28.575], [77.335, 28.575], [77.335, 28.555], [77.315, 28.555], [77.315, 28.575]
+        ]]
+      }
+    }
+  ]
+}

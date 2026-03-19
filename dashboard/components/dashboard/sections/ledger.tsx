@@ -317,7 +317,7 @@ export function LedgerSection() {
 
               <div className="bg-white p-4 rounded-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-transform hover:scale-105 duration-300">
                 <QRCodeSVG 
-                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/feedback/${selectedTicket.id}?token=${qrToken}`}
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/resolve/${selectedTicket.id}?token=${qrToken}`}
                   size={200}
                   level="H"
                   includeMargin={false}

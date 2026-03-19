@@ -1,0 +1,95 @@
+﻿node : node:internal/mo
+dules/cjs/loader:1451
+At line:1 char:1
++ node server.js 2>&1 
+| Out-File -FilePath 
+server_error.txt 
+-Encoding u ...
++ ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (node:internal   
+ /modules/cjs/loade    
+r:1451:String) [],     
+RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  throw err;
+  ^
+
+Error: Cannot find 
+module '@sendgrid/mail'
+Require stack:
+- C:\Users\harsheet\.an
+tigravity\INDIA INNOVAT
+ES\JanSamvaad-ResolveOS
+\src\services\notificat
+ion.js
+- C:\Users\harsheet\.an
+tigravity\INDIA INNOVAT
+ES\JanSamvaad-ResolveOS
+\src\webhooks\voice.js
+- C:\Users\harsheet\.an
+tigravity\INDIA INNOVAT
+ES\JanSamvaad-ResolveOS
+\server.js
+    at Module._resolveF
+ilename (node:internal/
+modules/cjs/loader:1448
+:15)
+    at 
+defaultResolveImpl (nod
+e:internal/modules/cjs/
+loader:1059:19)
+    at 
+resolveForCJSWithHooks 
+(node:internal/modules/
+cjs/loader:1064:22)
+    at Module._load (no
+de:internal/modules/cjs
+/loader:1234:25)
+    at TracingChannel.t
+raceSync (node:diagnost
+ics_channel:328:14)
+    at wrapModuleLoad (
+node:internal/modules/c
+js/loader:245:24)
+    at Module.require (
+node:internal/modules/c
+js/loader:1548:12)
+    at require (node:in
+ternal/modules/helpers:
+152:16)
+    at 
+Object.<anonymous> (C:\
+Users\harsheet\.antigra
+vity\INDIA INNOVATES\Ja
+nSamvaad-ResolveOS\src\
+services\notification.j
+s:1:16)
+    at Module._compile 
+(node:internal/modules/
+cjs/loader:1804:14) {
+  code: 
+'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\harshee
+t\\.antigravity\\INDIA 
+INNOVATES\\JanSamvaad-R
+esolveOS\\src\\services
+\\notification.js',
+    'C:\\Users\\harshee
+t\\.antigravity\\INDIA 
+INNOVATES\\JanSamvaad-R
+esolveOS\\src\\webhooks
+\\voice.js',
+    'C:\\Users\\harshee
+t\\.antigravity\\INDIA 
+INNOVATES\\JanSamvaad-R
+esolveOS\\server.js'
+  ]
+}
+
+Node.js v24.13.1

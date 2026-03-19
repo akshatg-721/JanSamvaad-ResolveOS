@@ -5,6 +5,13 @@ const pool = require('../db');
 const { isDndNumber } = require('../../lib/dndScrub');
 const { extractIntent } = require('../services/llm');
 const { createTicket } = require('../crm/ticket');
+const { analyzeSentiment, applyFrustrationUrgency } = require('../services/sentiment');
+const { translateToEnglish } = require('../services/translation');
+const { geocodeAddress } = require('../services/geocoding');
+const { getNearbyLandmarks } = require('../services/nearbyPlaces');
+const { getWeatherData, calculateWeatherBoost } = require('../services/weather');
+const { findDuplicate } = require('../services/duplicateDetector');
+const { notifyNewTicket } = require('../services/notification');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -162,15 +169,61 @@ router.post('/transcribe', async (req, res) => {
   const phone = req.body.From || req.body.Called || '';
 
   try {
-    const grievanceIntent = await extractIntent(transcript);
+    // Phase 1: AI Processing
+    const sentimentInfo = await analyzeSentiment(transcript);
+    const translationInfo = await translateToEnglish(transcript);
+    const grievanceIntent = await extractIntent(transcript, translationInfo.translated_text);
+
+    // Phase 2: Location & Mapping
+    const geoInfo = await geocodeAddress(grievanceIntent.location || grievanceIntent.summary);
+    let nearbyLandmarks = [];
+    if (geoInfo) {
+      nearbyLandmarks = await getNearbyLandmarks(geoInfo.latitude, geoInfo.longitude);
+    }
+
     const severityMap = { high: 'High', medium: 'Medium', low: 'Low' };
+    const baseUrgency = severityMap[String(grievanceIntent.urgency || '').toLowerCase()] || 'Medium';
+    
+    // Auto-escalate if frustration is high
+    let finalSeverity = applyFrustrationUrgency(baseUrgency, sentimentInfo.frustration_level);
+
+    // Phase 3: Weather Context
+    let weatherData = null;
+    let weatherBoosted = false;
+    if (geoInfo) {
+      weatherData = await getWeatherData(geoInfo.latitude, geoInfo.longitude);
+      const boostResult = calculateWeatherBoost(grievanceIntent.category, weatherData, finalSeverity);
+      finalSeverity = boostResult.severity;
+      weatherBoosted = boostResult.weather_boosted;
+    }
+
+    // Phase 4: Duplicate Detection
+    const dupInfo = await findDuplicate(grievanceIntent.summary, grievanceIntent.category, grievanceIntent.ward ? Number(grievanceIntent.ward) : null);
+
     const ticketPayload = {
       category: grievanceIntent.category || 'other',
       ward_id: grievanceIntent.ward ? Number(grievanceIntent.ward) || null : null,
-      severity: severityMap[String(grievanceIntent.urgency || '').toLowerCase()] || 'Medium'
+      severity: finalSeverity,
+      sentiment: sentimentInfo.sentiment,
+      frustration_level: sentimentInfo.frustration_level,
+      detected_language: translationInfo.detected_language,
+      translated_text: translationInfo.translated_text,
+      latitude: geoInfo?.latitude,
+      longitude: geoInfo?.longitude,
+      geo_address: geoInfo?.geo_address,
+      location_accuracy: geoInfo?.location_accuracy,
+      nearby_landmarks: nearbyLandmarks,
+      weather_condition: weatherData?.condition,
+      temperature: weatherData?.temperature,
+      weather_boosted: weatherBoosted,
+      is_duplicate: dupInfo.is_duplicate,
+      duplicate_of: dupInfo.duplicate_of
     };
     const ticket = await createTicket(phone, ticketPayload);
-    (req.log || logger).info({ ticketRef: ticket.ref }, 'Ticket created from transcription');
+    (req.log || logger).info({ ticketRef: ticket.ref }, 'Ticket created from enriched transcription');
+
+    // Phase 6: Multi-Channel Notifications
+    await notifyNewTicket(ticket);
 
     if (twilioClient && phone) {
       await twilioClient.messages.create({

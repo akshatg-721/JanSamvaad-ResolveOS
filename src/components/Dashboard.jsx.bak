@@ -1,0 +1,157 @@
+import { memo, useCallback, useEffect, useState, useRef } from 'react';
+
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+export default function Dashboard() {
+  const [tickets, setTickets] = useState([]);
+  const [stats, setStats] = useState({ total_open: 0, total_closed: 0, breach_risk: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [ticketsRes, statsRes] = await Promise.all([
+          fetch(`${API}/api/tickets`),
+          fetch(`${API}/api/stats`)
+        ]);
+        setTickets(await ticketsRes.json());
+        setStats(await statsRes.json());
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  return (
+    <div className="selection:bg-[#121212] selection:text-[#F6F1EA] relative overflow-x-hidden text-lg min-h-screen">
+      {/* Geometric Background */}
+      <div className="arch-lines">
+        <svg width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="none">
+          <line x1="10%" y1="0" x2="10%" y2="100%" stroke="#121212" strokeWidth="0.5"></line>
+          <line x1="90%" y1="0" x2="90%" y2="100%" stroke="#121212" strokeWidth="0.5"></line>
+          <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#121212" strokeWidth="0.5" strokeDasharray="4 8"></line>
+          <line x1="0" y1="800" x2="1440" y2="400" stroke="#B76E79" strokeWidth="0.5" opacity="0.5"></line>
+        </svg>
+      </div>
+
+      {/* Navigation */}
+      <nav className="fixed top-0 inset-x-0 z-50 h-24 flex items-center border-b border-[#121212]/5 bg-[#F6F1EA]/90 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto w-full px-8 flex items-center justify-between">
+          <a href="#" className="flex items-center gap-4 group">
+            <div className="text-[#121212] group-hover:text-[#B76E79] transition-colors duration-500">
+              <iconify-icon icon="solar:shield-check-linear" width="24" height="24"></iconify-icon>
+            </div>
+            <span className="text-xl font-serif font-normal tracking-tight text-[#121212] uppercase">JanSamvaad <span className="font-light opacity-70">ResolveOS</span></span>
+          </a>
+          
+          <div className="hidden md:flex items-center gap-12">
+            <a href="#stats" className="text-xs font-medium tracking-widest uppercase text-[#121212]/60 hover:text-[#121212] transition-colors">Operational Stats</a>
+            <a href="#ledger" className="text-xs font-medium tracking-widest uppercase text-[#121212]/60 hover:text-[#121212] transition-colors">Tickets Ledger</a>
+            <a href="#wards" className="text-xs font-medium tracking-widest uppercase text-[#121212]/60 hover:text-[#121212] transition-colors">GIS Intelligence</a>
+          </div>
+
+          <div className="flex items-center">
+            <div className="bg-[#121212] text-[#F6F1EA] text-xs font-medium tracking-widest uppercase px-8 py-4 rounded-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Live Terminal
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero / Stats Section */}
+      <header id="stats" className="relative pt-48 pb-32 px-6 overflow-hidden min-h-screen flex flex-col justify-center">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-grain pointer-events-none z-0 mix-blend-overlay opacity-50"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#F6F1EA]/80 via-[#F6F1EA]/50 to-[#F6F1EA] pointer-events-none"></div>
+        </div>
+
+        <div className="text-center max-w-7xl mx-auto z-10 relative">
+          <div className="inline-flex items-center gap-4 mb-12">
+            <div className="h-[1px] w-12 bg-[#B76E79]"></div>
+            <span className="text-xs font-medium uppercase tracking-[0.2em] text-[#121212]">Municipal Command Center</span>
+            <div className="h-[1px] w-12 bg-[#B76E79]"></div>
+          </div>
+
+          <h1 className="md:text-8xl text-6xl font-normal text-[#121212] tracking-tight font-serif mb-16 leading-tight">
+            Governance through <br />
+            <span className="italic relative">Intelligence & Empathy. <span className="absolute -bottom-2 left-0 w-full h-[1px] bg-[#B76E79]/40"></span></span>
+          </h1>
+
+          {/* Luxury KPI Bar */}
+          <div className="grid md:grid-cols-3 gap-12 mt-12 mb-20">
+            <div className="luxury-card p-10 flex flex-col items-center">
+               <span className="text-[0.65rem] font-bold tracking-[0.2em] text-[#B76E79] uppercase mb-4">Total Pending</span>
+               <span className="text-6xl font-serif text-[#121212]">{stats.total_open}</span>
+            </div>
+            <div className="luxury-card p-10 flex flex-col items-center bg-[#D4C4A8]/20">
+               <span className="text-[0.65rem] font-bold tracking-[0.2em] text-[#B76E79] uppercase mb-4">Resolved Today</span>
+               <span className="text-6xl font-serif text-[#121212]">{stats.total_closed}</span>
+            </div>
+            <div className="luxury-card p-10 flex flex-col items-center">
+               <span className="text-[0.65rem] font-bold tracking-[0.2em] text-[#B76E79] uppercase mb-4">Breach Risk</span>
+               <span className="text-6xl font-serif text-red-800">{stats.breach_risk}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Ticket Ledger Section */}
+      <section id="ledger" className="py-32 px-6 bg-white/40 backdrop-blur-sm relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div className="max-w-xl">
+              <span className="text-[#B76E79] font-bold text-[0.65rem] tracking-[0.2em] uppercase mb-4 block">Operational Queue</span>
+              <h2 className="text-5xl md:text-6xl font-serif text-[#121212] tracking-tight">System Ledger</h2>
+              <p className="text-lg text-[#121212]/60 mt-4 font-light">Real-time grievances synced with LLM intent extraction and automated ward assignment.</p>
+            </div>
+          </div>
+
+          <div className="luxury-card overflow-hidden rounded-sm border-[#121212]/5">
+            <table className="w-full text-left">
+              <thead className="bg-[#121212] text-[#F6F1EA]">
+                <tr>
+                  <th className="px-8 py-5 text-[0.65rem] font-bold tracking-[0.2em] uppercase">Ref ID</th>
+                  <th className="px-8 py-5 text-[0.65rem] font-bold tracking-[0.2em] uppercase">Category</th>
+                  <th className="px-8 py-5 text-[0.65rem] font-bold tracking-[0.2em] uppercase">Ward</th>
+                  <th className="px-8 py-5 text-[0.65rem] font-bold tracking-[0.2em] uppercase text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#121212]/5">
+                {tickets.map(ticket => (
+                  <tr key={ticket.id} className="hover:bg-[#F6F1EA] transition-colors duration-300">
+                    <td className="px-8 py-6 font-serif italic text-xl text-[#121212]">{ticket.ref}</td>
+                    <td className="px-8 py-6 text-sm uppercase tracking-widest text-[#121212]/60 font-medium">{ticket.category}</td>
+                    <td className="px-8 py-6 text-sm font-light text-[#121212]">{ticket.ward_name || 'Ward ' + ticket.ward_id}</td>
+                    <td className="px-8 py-6 text-right">
+                       <button className="px-6 py-2 bg-[#121212] text-white text-[0.65rem] font-bold tracking-widest uppercase hover:bg-[#B76E79] transition-all">Resolve</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-[#121212] text-[#F6F1EA] pt-24 pb-12 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+          <div className="flex items-center gap-3">
+            <iconify-icon icon="solar:shield-check-linear" class="text-[#B76E79]" width="20" height="20"></iconify-icon>
+            <span className="text-xl font-serif tracking-tight">JanSamvaad ResolveOS</span>
+          </div>
+          <div className="flex gap-8">
+            <span className="text-[0.65rem] font-medium tracking-widest uppercase text-[#F6F1EA]/40">Institutional Command Center</span>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto mt-20 border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-end gap-6">
+          <p className="text-[0.65rem] text-[#F6F1EA]/40 uppercase tracking-wide">© 2024 JanSamvaad. Municipal Intelligence Platform.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}

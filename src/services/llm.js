@@ -20,7 +20,7 @@ function fallbackIntent(transcript) {
   };
 }
 
-async function extractIntent(transcript) {
+async function extractIntent(transcript, translatedText = '') {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     return fallbackIntent(transcript);
@@ -29,17 +29,24 @@ async function extractIntent(transcript) {
   const ai = new GoogleGenAI({ apiKey });
   const prompt = `
 You are a civic grievance intake assistant for Indian municipalities.
-Extract from the caller transcript:
+Analyze the following complaint transcript (and its English translation if provided).
+
+Extract:
 - category: one of [water, road, electricity, sanitation, other]
 - subcategory: brief descriptor
 - ward: ward name or number if mentioned, else null
+- location: specific street, area, or landmark mentioned for the grievance
 - summary: one sentence summary in English
 - urgency: low/medium/high based on language used
-- language_detected: hindi/english/hinglish
+- language_detected: language of original transcript
+
 Return ONLY valid JSON, no explanation, no markdown.
 
-Transcript:
+Original Transcript:
 ${transcript}
+
+English Translation:
+${translatedText}
 `;
 
   try {

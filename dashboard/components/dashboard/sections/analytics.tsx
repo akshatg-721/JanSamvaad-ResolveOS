@@ -1,12 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { GrievanceTrendChart } from "@/components/dashboard/charts/grievance-trend-chart";
-import { GrievanceStatusDistribution } from "@/components/dashboard/charts/status-distribution";
-import { BarChart3, TrendingUp, PieChart, Info, ShieldAlert } from "lucide-react";
+import { BarChart3, TrendingUp, PieChart, Info, ShieldAlert, Clock, CheckCircle2 } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart as RePie, Pie, LineChart, Line
+} from 'recharts';
 
 export function AnalyticsSection() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const res = await apiFetch<any>("/api/analytics");
+        setData(res);
+      } catch (err) {
+        console.error("Analytics fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (loading) return <div className="h-96 flex items-center justify-center animate-pulse text-muted-foreground uppercase tracking-widest text-xs">Processing Intelligence...</div>;
+  if (!data) return <div className="h-96 flex items-center justify-center text-red-400">Failed to load analytics engine.</div>;
+
+  const stats = [
+    { label: "SLA Compliance", value: `${data.slaPerformance?.[3]?.onTime || 92}%`, icon: CheckCircle2, color: "text-green-500" },
+    { label: "Avg Resolution", value: `${data.wardStats?.[0]?.avgResolutionHrs || 4.2}h`, icon: Clock, color: "text-accent" },
+    { label: "Citizen Satisfaction", value: `${data.wardStats?.[0]?.citizenSatisfaction || 85}%`, icon: TrendingUp, color: "text-blue-400" },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between">
@@ -14,67 +43,71 @@ export function AnalyticsSection() {
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Governance Intelligence</h2>
           <p className="text-muted-foreground mt-1">Advanced data modeling for neighborhood-level grievance patterns.</p>
         </div>
-        <div className="flex items-center gap-2">
-           <div className="px-3 py-1 rounded-full bg-secondary border border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-             <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-             Live Sync: Active
-           </div>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 bg-card/50 border-border">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Resolution Trajectory</CardTitle>
-                <CardDescription>Performance of civic departments over time</CardDescription>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((item, i) => (
+          <Card key={i} className="bg-card/50 border-border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</span>
+                <item.icon className={`w-4 h-4 ${item.color}`} />
               </div>
-              <TrendingUp className="w-5 h-5 text-accent" />
-            </div>
+              <div className="text-2xl font-bold text-foreground">{item.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-card/50 border-border">
+          <CardHeader>
+            <CardTitle className="text-sm font-bold uppercase tracking-wider">Ward-Level Performance</CardTitle>
+            <CardDescription>SLA Compliance Rate by Ward</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <GrievanceTrendChart />
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.wardStats}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                <XAxis dataKey="ward" stroke="#666" fontSize={10} />
+                <YAxis stroke="#666" fontSize={10} />
+                <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px' }} />
+                <Bar dataKey="slaRate" fill="var(--accent)">
+                  {data.wardStats.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.slaRate < 80 ? '#ef4444' : 'var(--accent)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card className="bg-card/50 border-border">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Inflow Mapping</CardTitle>
-                <CardDescription>Grievance volume by density</CardDescription>
-              </div>
-              <PieChart className="w-5 h-5 text-accent" />
-            </div>
+            <CardTitle className="text-sm font-bold uppercase tracking-wider">Category Density</CardTitle>
+            <CardDescription>Total grievances by classification</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
-             <GrievanceStatusDistribution />
+            <ResponsiveContainer width="100%" height="100%">
+               <RePie>
+                 <Pie
+                   data={data.categoryTrend}
+                   dataKey="count"
+                   nameKey="cat"
+                   cx="50%"
+                   cy="50%"
+                   outerRadius={80}
+                   label={{ fontSize: 10, fill: '#fff' }}
+                 >
+                   {data.categoryTrend.map((entry: any, index: number) => (
+                     <Cell key={`cell-${index}`} fill={entry.color || 'var(--accent)'} />
+                   ))}
+                 </Pie>
+                 <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px' }} />
+               </RePie>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: "Avg Resolution Time", value: "4.2 Hours", change: "-12%", icon: BarChart3 },
-          { label: "Citizen Satisfaction", value: "92%", change: "+5%", icon: TrendingUp },
-          { label: "Active Deployments", value: "24 Units", change: "Stable", icon: Info },
-        ].map((item, i) => (
-          <Card key={i} className="bg-card/50 border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">{item.label}</span>
-                <item.icon className="w-4 h-4 text-accent" />
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-foreground">{item.value}</span>
-                <span className={`text-xs font-bold ${item.change.startsWith("+") ? "text-green-500" : item.change.startsWith("-") ? "text-red-500" : "text-muted-foreground"}`}>
-                  {item.change}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
       </div>
     </div>
   );

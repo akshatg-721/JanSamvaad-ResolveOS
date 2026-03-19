@@ -71,9 +71,14 @@ async function createTicket(phone, grievanceData) {
     const slaDeadline = getSlaDeadline(grievanceData.severity);
 
     const insertTicketResult = await client.query(
-      `INSERT INTO tickets (contact_id, ref, category, ward_id, severity, status, sla_deadline)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, contact_id, ref, category, ward_id, severity, status, sla_deadline, created_at`,
+      `INSERT INTO tickets (
+        contact_id, ref, category, ward_id, severity, status, sla_deadline,
+        sentiment, frustration_level, detected_language, translated_text,
+        latitude, longitude, geo_address, location_accuracy, nearby_landmarks,
+        weather_condition, temperature, weather_boosted
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      RETURNING *`,
       [
         contactId,
         ref,
@@ -81,7 +86,19 @@ async function createTicket(phone, grievanceData) {
         grievanceData.ward_id,
         grievanceData.severity,
         'open',
-        slaDeadline
+        slaDeadline,
+        grievanceData.sentiment || null,
+        grievanceData.frustration_level || null,
+        grievanceData.detected_language || null,
+        grievanceData.translated_text || null,
+        grievanceData.latitude || null,
+        grievanceData.longitude || null,
+        grievanceData.geo_address || null,
+        grievanceData.location_accuracy || null,
+        grievanceData.nearby_landmarks || null,
+        grievanceData.weather_condition || null,
+        grievanceData.temperature || null,
+        grievanceData.weather_boosted || false
       ]
     );
 

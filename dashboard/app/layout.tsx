@@ -1,12 +1,23 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { JetBrains_Mono, Outfit } from 'next/font/google'
+import { JetBrains_Mono, Outfit, Space_Grotesk, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] });
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-display",
+});
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+});
 
 export const metadata: Metadata = {
   title: 'JanSamvaad',
@@ -38,7 +49,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.className} antialiased duration-500 ease-in-out transition-colors`} suppressHydrationWarning>
+      <body className={`${outfit.className} ${spaceGrotesk.variable} ${cormorant.variable} antialiased duration-500 ease-in-out transition-colors`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
           <Analytics />

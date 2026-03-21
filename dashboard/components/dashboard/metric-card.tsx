@@ -40,22 +40,27 @@ export function MetricCard({
         </div>
 
         <div className="flex items-end gap-3">
-          <span className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+          <span className="text-3xl font-extrabold text-foreground tracking-tighter">
             {value}
           </span>
-          <div
-            className={cn(
-              "flex items-center gap-1 text-sm font-medium mb-1",
-              changeType === "positive" && "text-success",
-              changeType === "negative" && "text-destructive",
-              changeType === "neutral" && "text-muted-foreground"
-            )}
-          >
-            {changeType === "positive" && <TrendingUp className="w-3.5 h-3.5" />}
-            {changeType === "negative" && (
-              <TrendingDown className="w-3.5 h-3.5" />
-            )}
-            <span>{change}</span>
+          <div className="flex flex-col items-start mb-1">
+            <div
+              className={cn(
+                "flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest",
+                changeType === "positive" && "text-emerald-400",
+                changeType === "negative" && "text-rose-400",
+                changeType === "neutral" && "text-muted-foreground"
+              )}
+            >
+              {changeType === "positive" && <TrendingUp className="w-3 h-3" />}
+              {changeType === "negative" && (
+                <TrendingDown className="w-3 h-3" />
+              )}
+              <span>{change}</span>
+            </div>
+            <span className="text-[9px] text-muted-foreground/60 uppercase font-medium tracking-tight">
+              24h Change
+            </span>
           </div>
         </div>
       </div>

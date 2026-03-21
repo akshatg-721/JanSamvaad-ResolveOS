@@ -39,6 +39,10 @@ app.use((req, res, next) => {
   req.requestId = requestId;
   res.setHeader('X-Request-Id', requestId);
   req.log = logger.child({ requestId });
+  
+  // Request Logging
+  req.log.info({ method: req.method, url: req.originalUrl, ip: req.ip }, 'Incoming Request');
+  
   next();
 });
 
@@ -58,3 +62,16 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
+// Centralized Error Handling Middleware
+app.use((err, req, res, next) => {
+  (req.log || logger).error({ err, stack: err.stack, method: req.method, url: req.originalUrl }, 'Unhandled Error');
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({ 
+    error: 'Internal Server Error', 
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+module.exports = { app, server, io };

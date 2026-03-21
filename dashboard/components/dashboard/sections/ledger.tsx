@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, Download, ExternalLink, Hash, QrCode, X, Loader2, Plus } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { apiFetch } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 type Ticket = {
   id: number;
@@ -22,6 +23,7 @@ type Ticket = {
   status: string;
   created_at: string;
   phone: string;
+  evidence_url?: string;
 };
 
 export function LedgerSection() {
@@ -233,46 +235,68 @@ export function LedgerSection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tickets.map((ticket) => (
-                  <TableRow key={ticket.id} className="border-border hover:bg-secondary/30 transition-colors group">
-                    <TableCell className="font-mono text-xs font-bold text-accent">{ticket.ref}</TableCell>
-                    <TableCell className="font-medium">{ticket.category}</TableCell>
-                    <TableCell className="text-muted-foreground">{ticket.ward_id ? `Ward ${ticket.ward_id}` : 'Unassigned'}</TableCell>
+                {tickets.map((ticket, index) => (
+                  <TableRow 
+                    key={ticket.id} 
+                    className={cn(
+                      "border-border transition-colors group",
+                      index % 2 === 0 ? "bg-secondary/10" : "bg-transparent",
+                      "hover:bg-accent/10"
+                    )}
+                  >
+                    <TableCell className="font-mono text-[11px] font-black text-blue-400 uppercase tracking-tighter">{ticket.ref}</TableCell>
+                    <TableCell className="font-bold text-slate-200">{ticket.category}</TableCell>
+                    <TableCell className="text-slate-500 font-medium text-xs">{ticket.ward_id ? `Ward ${ticket.ward_id}` : 'Unassigned'}</TableCell>
                     <TableCell className="text-center">
-                      <Badge className={
-                        ticket.severity === "Critical" ? "bg-red-500/10 text-red-500 border-red-500/20" :
-                        ticket.severity === "High" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" :
-                        "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                      }>
+                      <Badge variant="outline" className={cn(
+                        "rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest",
+                        ticket.severity === "Critical" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                        ticket.severity === "High" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
+                        "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                      )}>
                         {ticket.severity}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider">
-                        <div className={
-                          "w-1.5 h-1.5 rounded-full " + 
-                          (ticket.status === "closed" || ticket.status === "resolved" ? "bg-green-500" : ticket.status === "open" ? "bg-red-500" : "bg-orange-500 animate-pulse")
-                        } />
+                      <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full ",
+                          (ticket.status === "closed" || ticket.status === "resolved") ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : 
+                          ticket.status === "open" ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]" : 
+                          "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+                        )} />
                         {ticket.status}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(ticket.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right flex items-center justify-end gap-2">
-                      {ticket.status === 'open' && (
-                        <Button 
-                          onClick={() => handleGenerateQR(ticket)}
-                          size="sm" 
-                          variant="outline"
-                          disabled={generatingQR === ticket.id}
-                          className="border-accent/30 text-accent hover:bg-accent hover:text-accent-foreground gap-2"
-                        >
-                          {generatingQR === ticket.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
-                          Resolve
+                    <TableCell className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">{new Date(ticket.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {ticket.status === 'open' && (
+                          <Button 
+                            onClick={() => handleGenerateQR(ticket)}
+                            size="sm" 
+                            variant="outline"
+                            disabled={generatingQR === ticket.id}
+                            className="h-8 px-3 rounded-full border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+                          >
+                            {generatingQR === ticket.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <QrCode className="w-3.5 h-3.5" />}
+                            Resolve
+                          </Button>
+                        )}
+                        {ticket.evidence_url && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-blue-400 hover:text-white hover:bg-blue-500/20"
+                            onClick={() => window.open(ticket.evidence_url, '_blank')}
+                          >
+                            <Search className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/5 transition-colors">
+                          <ExternalLink className="w-4 h-4" />
                         </Button>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hidden md:inline-flex">
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

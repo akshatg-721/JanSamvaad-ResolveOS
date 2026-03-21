@@ -25,8 +25,28 @@ CREATE TABLE IF NOT EXISTS tickets (
   feedback_rating INTEGER,
   feedback_text TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   closed_at TIMESTAMPTZ
 );
+
+-- Trigger to update updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_tickets_updated_at') THEN
+    CREATE TRIGGER update_tickets_updated_at
+    BEFORE UPDATE ON tickets
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS call_consents (
   id SERIAL PRIMARY KEY,

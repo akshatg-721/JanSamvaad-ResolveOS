@@ -39,27 +39,27 @@ export function ActivitySection() {
 
       <div className="grid grid-cols-1 gap-4">
         {activities.map((activity, index) => (
-          <Card key={activity.id} className="bg-card/40 backdrop-blur-sm border-border hover:border-accent/40 transition-colors shadow-none overflow-hidden group">
-            <CardContent className="p-4 flex items-start gap-4">
-              <div className={`mt-1 p-2.5 rounded-xl flex items-center justify-center shrink-0 ${
-                activity.status === "success" ? "bg-green-500/10 text-green-500" :
-                activity.status === "warning" ? "bg-red-500/10 text-red-500" :
-                "bg-blue-500/10 text-blue-500"
+          <Card key={activity.id} className="bg-slate-900/40 backdrop-blur-md border-white/5 hover:border-blue-500/30 transition-all shadow-none overflow-hidden group rounded-2xl">
+            <CardContent className="p-4 flex items-center gap-5">
+              <div className={`p-3 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                activity.status === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                activity.status === "warning" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
+                "bg-blue-500/10 text-blue-400 border border-blue-500/20"
               }`}>
                 {getIcon(activity.type)}
               </div>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-foreground">{activity.user}</span>
-                    <span className="text-sm text-muted-foreground">{activity.action}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-4 mb-0.5">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-black text-xs text-slate-100 uppercase tracking-tight">{activity.user}</span>
+                    <span className="text-xs text-slate-500 font-medium truncate">{activity.action}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-600 font-bold uppercase tracking-widest shrink-0">
                     <Clock className="w-3 h-3" />
                     {activity.time}
                   </div>
                 </div>
-                <p className="text-sm font-medium text-foreground/80">{activity.detail}</p>
+                <p className="text-sm font-semibold text-slate-300 truncate tracking-tight">{activity.detail}</p>
               </div>
             </CardContent>
             {/* Gradient highlight on hover */}

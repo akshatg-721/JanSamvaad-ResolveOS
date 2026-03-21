@@ -23,24 +23,27 @@ function fallbackIntent(transcript) {
 async function extractIntent(transcript, translatedText = '') {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
+    logger.warn('GEMINI_API_KEY is not set. Using fallback intent.');
     return fallbackIntent(transcript);
   }
 
   const ai = new GoogleGenAI({ apiKey });
   const prompt = `
-You are a civic grievance intake assistant for Indian municipalities.
-Analyze the following complaint transcript (and its English translation if provided).
+You are a high-accuracy civic intake AI for JanSamvaad ResolveOS.
+Analyze the following citizen transcript (often in Hinglish, Tamil, or regional dialects).
 
 Extract:
 - category: one of [water, road, electricity, sanitation, other]
 - subcategory: brief descriptor
 - ward: ward name or number if mentioned, else null
-- location: specific street, area, or landmark mentioned for the grievance
+- location: specific street, area, or landmark mentioned
 - summary: one sentence summary in English
-- urgency: low/medium/high based on language used
-- language_detected: language of original transcript
+- urgency: one of [Low, Medium, High, Critical]
+- language_detected: original language (e.g., Hinglish, Tamil, Hindi)
+- sentiment: [positive, neutral, negative]
 
 Return ONLY valid JSON, no explanation, no markdown.
+If the transcript is in Tamil or mixed Hinglish, use your deep multilingual capabilities to extract intent accurately.
 
 Original Transcript:
 ${transcript}
@@ -63,7 +66,7 @@ ${translatedText}
 
     return JSON.parse(cleaned);
   } catch (error) {
-    logger.error({ err: error }, 'Gemini extraction failed');
+    logger.error({ err: error, transcript }, 'Gemini extraction failed. Using fallback intent.');
     return fallbackIntent(transcript);
   }
 }

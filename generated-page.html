@@ -1,0 +1,501 @@
+<html lang="en"><head>
+<script>
+try{if(window.parent&&window.parent!==window){window.parent.promotekit_referral="1fd2949a-d22c-431b-92bf-02d4ad04ee24";window.parent.document.cookie="promotekit_referral=1fd2949a-d22c-431b-92bf-02d4ad04ee24;path=/;domain=.aura.build;max-age=31536000"}}catch(e){}
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kairon - Algorithmic Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<!-- aura-ga4-start -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-2M6V79H761"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-2M6V79H761');
+</script>
+<!-- aura-ga4-end -->
+</head>
+<body class="bg-[#050505] text-[#F8F5F0] font-serif overflow-x-hidden antialiased selection:bg-[#D4C3A3]/25 selection:text-[#FDF3DB]">
+    
+    <style>
+        @keyframes cinematicUp {
+            from { opacity: 0; transform: translateY(2rem); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes focusIn {
+            from { opacity: 0; transform: scale(0.98); filter: blur(10px); }
+            to { opacity: 1; transform: scale(1); filter: blur(0); }
+        }
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .reveal {
+            opacity: 0; transform: translateY(2.5rem); filter: blur(10px);
+            transition: all 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.show { opacity: 1; transform: translateY(0); filter: blur(0); }
+    </style>
+
+    <!-- Cinematic Overlays -->
+    <div class="fixed inset-0 z-[1] pointer-events-none mix-blend-screen opacity-10" style="background-image: url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E&quot;);"></div>
+    <div class="fixed inset-0 z-[1] pointer-events-none" style="background: radial-gradient(circle at center, transparent 40%, rgba(5,5,5,0.95) 120%);"></div>
+
+    <div class="relative z-10 flex flex-col min-h-screen">
+        
+        <!-- Hero Section -->
+        <section class="relative flex flex-col justify-between h-screen min-h-[45rem] overflow-hidden">
+            <canvas id="shader-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+            
+            <nav class="relative z-10 flex items-center justify-between px-8 py-10 md:px-20 md:py-12">
+                <div class="font-mono text-xs font-normal tracking-tighter text-[#FDF3DB] uppercase">KAIRON</div>
+            </nav>
+
+            <div class="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center">
+                <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase mb-12 opacity-0 animate-[cinematicUp_1.5s_cubic-bezier(0.16,1,0.3,1)_0.2s_forwards]">Algorithmic Intelligence</div>
+                <h1 class="text-[clamp(4rem,9vw,8.5rem)] font-light leading-[1.05] tracking-tight opacity-0 blur-md animate-[focusIn_2s_cubic-bezier(0.16,1,0.3,1)_0.5s_forwards] text-[#F8F5F0] drop-shadow-[0_10px_40px_rgba(0,0,0,0.9)]">
+                    The market<br>
+                    <em class="block font-normal italic text-[#FDF3DB] tracking-tighter drop-shadow-[0_0_60px_rgba(212,195,163,0.25)]">has a signal.</em>
+                </h1>
+                <div class="w-px h-[7.5rem] bg-gradient-to-b from-transparent via-[#A69576] to-transparent my-16 opacity-0 animate-[cinematicUp_1.5s_cubic-bezier(0.16,1,0.3,1)_1.2s_forwards]"></div>
+            </div>
+
+            <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 border-t border-white/5 bg-gradient-to-t from-black/90 to-transparent opacity-0 animate-[cinematicUp_1.5s_cubic-bezier(0.16,1,0.3,1)_1.5s_forwards]">
+                <div class="p-10 text-center border-r border-white/5 last:border-0 hover:bg-white/5 transition-colors duration-700">
+                    <div class="text-[clamp(1.8rem,3vw,2.8rem)] font-light text-[#FDF3DB] tracking-tight leading-none">77%</div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4">ETH Win Rate</div>
+                </div>
+                <div class="p-10 text-center border-r border-white/5 last:border-0 hover:bg-white/5 transition-colors duration-700">
+                    <div class="text-[clamp(1.8rem,3vw,2.8rem)] font-light text-[#FDF3DB] tracking-tight leading-none">+592R</div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4">180-Day Return</div>
+                </div>
+                <div class="p-10 text-center border-r border-white/5 last:border-0 hover:bg-white/5 transition-colors duration-700">
+                    <div class="text-[clamp(1.8rem,3vw,2.8rem)] font-light text-[#FDF3DB] tracking-tight leading-none">927</div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4">Signals Tested</div>
+                </div>
+                <div class="p-10 text-center border-r border-white/5 last:border-0 hover:bg-white/5 transition-colors duration-700">
+                    <div class="text-[clamp(1.8rem,3vw,2.8rem)] font-light text-[#FDF3DB] tracking-tight leading-none">0.0%</div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4">Ruin Probability</div>
+                </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#D4C3A3]/20 to-transparent z-10"></div>
+        </section>
+
+        <!-- Ticker Section -->
+        <div class="overflow-hidden border-b border-white/5 bg-[#0a0a0a] py-5">
+            <div class="flex gap-24 whitespace-nowrap animate-[scroll_40s_linear_infinite] w-max">
+                <div class="flex gap-24 items-center">
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">ETH/USDT <span class="text-[#A3C9AA] font-normal">77.1% WR</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">BTC/USDT <span class="text-[#A3C9AA] font-normal">73.4% WR</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">SOL/USDT <span class="text-[#A3C9AA] font-normal">67.7% WR</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Profit Factor <span class="text-[#A3C9AA] font-normal">5.40×</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Max Drawdown <span class="text-[#D18C8C] font-normal">−3.0R</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Monte Carlo Ruin <span class="text-[#A3C9AA] font-normal">0.00%</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Risk / Reward <span class="text-[#A3C9AA] font-normal">1:2.8</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Signals Evaluated <span class="text-[#A3C9AA] font-normal">927</span></div>
+                </div>
+                <div class="flex gap-24 items-center">
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">ETH/USDT <span class="text-[#A3C9AA] font-normal">77.1% WR</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">BTC/USDT <span class="text-[#A3C9AA] font-normal">73.4% WR</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">SOL/USDT <span class="text-[#A3C9AA] font-normal">67.7% WR</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Profit Factor <span class="text-[#A3C9AA] font-normal">5.40×</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Max Drawdown <span class="text-[#D18C8C] font-normal">−3.0R</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Monte Carlo Ruin <span class="text-[#A3C9AA] font-normal">0.00%</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Risk / Reward <span class="text-[#A3C9AA] font-normal">1:2.8</span></div>
+                    <div class="font-mono text-xs font-normal tracking-widest text-[#C2BCB0] uppercase flex items-center gap-3">Signals Evaluated <span class="text-[#A3C9AA] font-normal">927</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statement Section with Monochrome Imagery -->
+        <div class="relative flex items-center justify-center px-8 py-40 md:py-64 border-b border-white/5 bg-[#050505] overflow-hidden reveal group">
+            <div class="absolute inset-0 pointer-events-none z-0">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&amp;w=2864&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover grayscale contrast-150 opacity-[0.15] mix-blend-luminosity transition-transform duration-[40s] group-hover:scale-110" alt="Abstract flow topology">
+                <div class="absolute inset-0 bg-gradient-to-b from-[#050505] via-transparent to-[#050505]"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505]"></div>
+            </div>
+            <div class="absolute inset-0 pointer-events-none z-[1]" style="background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(212,195,163,0.03) 0%, transparent 80%);"></div>
+            
+            <p class="relative z-10 text-[clamp(2.2rem,5vw,4.5rem)] font-light leading-[1.3] text-center max-w-5xl tracking-tight drop-shadow-2xl">
+                <span class="text-[#8E8A80]">Retail trades the noise. Institutions trade the flow.</span><br><br>
+                Kairon executes <em class="not-italic font-normal text-[#FDF3DB]">only when the edge is mathematically absolute.</em>
+            </p>
+        </div>
+
+        <!-- Numbers Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 border-b border-white/5 bg-[#050505]">
+            <div class="reveal relative overflow-hidden p-10 md:p-20 md:border-r border-b md:border-b-0 border-white/5 last:border-0 hover:bg-[#0c0c0c] transition-colors duration-1000 group">
+                <div class="font-mono text-xs font-normal tracking-[0.2rem] text-[#C2BCB0] uppercase mb-16 flex items-center gap-4">
+                    <div class="w-1 h-1 bg-[#D4C3A3] shadow-[0_0_10px_#FDF3DB]"></div>
+                    ETH / USDT
+                </div>
+                <div class="text-[clamp(5rem,9vw,8rem)] font-normal leading-none tracking-tighter text-[#FDF3DB] -ml-2">
+                    77<span class="text-[clamp(1.5rem,3vw,2.5rem)] text-[#A69576] align-top relative top-4 ml-1">%</span>
+                </div>
+                <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4 mb-16">Win Rate</div>
+                <div class="flex flex-col gap-5 border-t border-white/5 pt-12">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Volume</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#F8F5F0]">1,109</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Net Yield</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#A3C9AA]">+110R</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Profit Factor</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#A3C9AA]">5.40×</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Drawdown</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#F8F5F0]">−3.0R</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal relative overflow-hidden p-10 md:p-20 md:border-r border-b md:border-b-0 border-white/5 last:border-0 hover:bg-[#0c0c0c] transition-colors duration-1000 group" style="transition-delay: 0.15s;">
+                <div class="font-mono text-xs font-normal tracking-[0.2rem] text-[#C2BCB0] uppercase mb-16 flex items-center gap-4">
+                    <div class="w-1 h-1 bg-[#D4C3A3] shadow-[0_0_10px_#FDF3DB]"></div>
+                    BTC / USDT
+                </div>
+                <div class="text-[clamp(5rem,9vw,8rem)] font-normal leading-none tracking-tighter text-[#FDF3DB] -ml-2">
+                    73<span class="text-[clamp(1.5rem,3vw,2.5rem)] text-[#A69576] align-top relative top-4 ml-1">%</span>
+                </div>
+                <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4 mb-16">Win Rate</div>
+                <div class="flex flex-col gap-5 border-t border-white/5 pt-12">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Volume</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#F8F5F0]">1,439</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Net Yield</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#A3C9AA]">+120R</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Profit Factor</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#A3C9AA]">4.24×</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Drawdown</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#F8F5F0]">−10.0R</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal relative overflow-hidden p-10 md:p-20 border-white/5 last:border-0 hover:bg-[#0c0c0c] transition-colors duration-1000 group" style="transition-delay: 0.3s;">
+                <div class="font-mono text-xs font-normal tracking-[0.2rem] text-[#C2BCB0] uppercase mb-16 flex items-center gap-4">
+                    <div class="w-1 h-1 bg-[#D4C3A3] shadow-[0_0_10px_#FDF3DB]"></div>
+                    SOL / USDT
+                </div>
+                <div class="text-[clamp(5rem,9vw,8rem)] font-normal leading-none tracking-tighter text-[#FDF3DB] -ml-2">
+                    67<span class="text-[clamp(1.5rem,3vw,2.5rem)] text-[#A69576] align-top relative top-4 ml-1">%</span>
+                </div>
+                <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mt-4 mb-16">Win Rate</div>
+                <div class="flex flex-col gap-5 border-t border-white/5 pt-12">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Volume</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#F8F5F0]">3,313</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Net Yield</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#A3C9AA]">+221R</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Profit Factor</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#A3C9AA]">3.19×</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-light italic text-[#C2BCB0]">Drawdown</span>
+                        <span class="font-mono text-xs font-normal tracking-widest text-[#F8F5F0]">−17.5R</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monolithic Image Break Section -->
+        <div class="relative h-[70vh] min-h-[40rem] w-full border-b border-white/5 overflow-hidden reveal group">
+            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&amp;w=2940&amp;auto=format&amp;fit=crop" class="absolute inset-0 w-full h-full object-cover grayscale contrast-[1.25] brightness-[0.6] transition-transform duration-[30s] group-hover:scale-105" alt="Institutional Architecture">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/40 to-[#050505] opacity-90"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505] opacity-90"></div>
+            <div class="absolute bottom-12 left-8 md:bottom-24 md:left-20 z-10 flex flex-col gap-6 max-w-3xl">
+                <div class="font-mono text-xs font-normal tracking-[0.2rem] text-[#A69576] uppercase flex items-center gap-4">
+                    <div class="w-6 h-px bg-[#A69576]"></div>
+                    Institutional Grade
+                </div>
+                <div class="text-[clamp(2rem,4vw,3.5rem)] font-light leading-[1.1] tracking-tight text-[#F8F5F0]">
+                    Engineered for environments where milliseconds and absolute precision dictate survival.
+                </div>
+            </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-20 lg:gap-32 items-start p-8 py-32 md:p-20 md:py-48 border-b border-white/5 bg-gradient-to-b from-[#050505] to-[#080808]">
+            <div class="reveal">
+                <div class="font-mono text-xs font-normal tracking-[0.2rem] text-[#A69576] uppercase mb-12">Architecture</div>
+                <h2 class="text-[clamp(3rem,5vw,4.5rem)] font-light leading-[1.1] tracking-tight mb-20 text-[#F8F5F0]">
+                    Four stages.<br>
+                    <em class="italic text-[#D4C3A3] font-normal tracking-tighter">One vector.</em>
+                </h2>
+                
+                <div class="flex flex-col">
+                    <div class="flex gap-8 py-10 md:py-12 border-b border-white/5 first:border-t relative group transition-all duration-700 hover:pl-6 cursor-default">
+                        <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-[#FDF3DB] to-transparent scale-y-0 origin-center transition-transform duration-700 group-hover:scale-y-100"></div>
+                        <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] pt-[0.4rem] w-8 shrink-0 transition-colors duration-500 group-hover:text-[#FDF3DB]">01</div>
+                        <div>
+                            <div class="text-2xl font-light mb-3 tracking-tight text-[#F8F5F0]">Feature Engineering</div>
+                            <div class="text-base font-light text-[#C2BCB0] leading-relaxed">60+ non-linear indicators on 4H structure. ATR bands, volume deltas, and deeply embedded order flow parameters.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-8 py-10 md:py-12 border-b border-white/5 relative group transition-all duration-700 hover:pl-6 cursor-default">
+                        <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-[#FDF3DB] to-transparent scale-y-0 origin-center transition-transform duration-700 group-hover:scale-y-100"></div>
+                        <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] pt-[0.4rem] w-8 shrink-0 transition-colors duration-500 group-hover:text-[#FDF3DB]">02</div>
+                        <div>
+                            <div class="text-2xl font-light mb-3 tracking-tight text-[#F8F5F0]">Inference Topology</div>
+                            <div class="text-base font-light text-[#C2BCB0] leading-relaxed">XGBoost architectures trained iteratively over 180-day sliding windows. Entirely pair-specific.</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-8 py-10 md:py-12 border-b border-white/5 relative group transition-all duration-700 hover:pl-6 cursor-default">
+                        <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-[#FDF3DB] to-transparent scale-y-0 origin-center transition-transform duration-700 group-hover:scale-y-100"></div>
+                        <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] pt-[0.4rem] w-8 shrink-0 transition-colors duration-500 group-hover:text-[#FDF3DB]">03</div>
+                        <div>
+                            <div class="text-2xl font-light mb-3 tracking-tight text-[#F8F5F0]">Regime Filtration</div>
+                            <div class="text-base font-light text-[#C2BCB0] leading-relaxed">Execution is blacklisted unless baseline confidence exceeds 88%. We sit in cash during market noise.</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-8 py-10 md:py-12 border-b border-white/5 relative group transition-all duration-700 hover:pl-6 cursor-default">
+                        <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-[#FDF3DB] to-transparent scale-y-0 origin-center transition-transform duration-700 group-hover:scale-y-100"></div>
+                        <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] pt-[0.4rem] w-8 shrink-0 transition-colors duration-500 group-hover:text-[#FDF3DB]">04</div>
+                        <div>
+                            <div class="text-2xl font-light mb-3 tracking-tight text-[#F8F5F0]">Asymmetric Execution</div>
+                            <div class="text-base font-light text-[#C2BCB0] leading-relaxed">Hard-coded API routing to Binance Futures. Dynamic ATR trailing stops. 1% capital allocation per event.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telemetry Window -->
+            <div class="reveal sticky top-24 bg-[#0c0c0c]/80 backdrop-blur-2xl border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.9),inset_0_0_0_1px_rgba(212,195,163,0.05)] overflow-hidden" style="transition-delay: 0.2s;">
+                <div class="absolute inset-0 pointer-events-none opacity-30" style="background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px);"></div>
+                
+                <div class="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-black/90 relative z-10">
+                    <div class="font-mono text-xs font-normal tracking-[0.2rem] text-[#F8F5F0] uppercase flex items-center gap-3">
+                        <iconify-icon icon="solar:programming-linear" stroke-width="1.5" class="text-lg text-[#A69576]"></iconify-icon>
+                        Live Telemetry · Mainnet
+                    </div>
+                    <div class="w-2 h-2 rounded-full bg-[#A3C9AA] shadow-[0_0_12px_#A3C9AA] animate-[pulse-slow_3s_infinite]"></div>
+                </div>
+                
+                <div class="p-8 md:p-10 font-mono text-xs font-normal leading-[2.6] tracking-widest relative z-10 flex flex-col">
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:16.0</span>
+                        <span class="text-[#7A9BB8] font-normal w-12 shrink-0">SYS</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">4H CANDLE CLOSE [ETH/USDT]</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:16.2</span>
+                        <span class="text-[#D4C3A3] font-normal w-12 shrink-0">MDL</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">MOUNT INFERENCE V1.0_26A</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:17.1</span>
+                        <span class="text-[#D4C3A3] font-normal w-12 shrink-0">FEAT</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">TENSOR ALIGNMENT [64 FEATURES]</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:18.8</span>
+                        <span class="text-[#D4C3A3] font-normal w-12 shrink-0">PRED</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">VECTOR: LONG // CONFIDENCE: <span class="text-[#A3C9AA]">98.8%</span></span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:19.0</span>
+                        <span class="text-[#A3C9AA] font-normal w-12 shrink-0">PASS</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">REGIME FILTRATION CHECKSUM OK</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:19.5</span>
+                        <span class="text-[#A3C9AA] font-normal w-12 shrink-0">TGT</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">TP1: 2021.44 // TP2: 2082.18</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:19.5</span>
+                        <span class="text-[#7A9BB8] font-normal w-12 shrink-0">RISK</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate">HARD SL: 1897.41</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0">07:37:20.1</span>
+                        <span class="text-[#7A9BB8] font-normal w-12 shrink-0">EXEC</span>
+                        <span class="text-[#F8F5F0] transition-colors truncate">ORDER FILLED @ 85.45 MS</span>
+                    </div>
+                    <div class="flex hover:bg-white/5 transition-colors duration-300 group px-2 -mx-2 rounded-md mt-6 items-center">
+                        <span class="text-[#C2BCB0] w-[5.5rem] shrink-0 flex items-center gap-2">07:37:21.0</span>
+                        <span class="text-[#A3C9AA] font-normal w-12 shrink-0">MON</span>
+                        <span class="text-[#F8F5F0] group-hover:text-[#FDF3DB] transition-colors truncate flex items-center gap-2">
+                            <iconify-icon icon="solar:shield-check-linear" stroke-width="1.5" class="text-sm"></iconify-icon>
+                            POSITION TRACKING ACTIVE...
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Closing Section with Monochrome Background -->
+        <div class="relative flex flex-col items-center justify-center text-center p-8 py-48 md:py-80 bg-[#050505] overflow-hidden reveal group">
+            <div class="absolute inset-0 pointer-events-none z-0">
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&amp;w=2940&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover grayscale contrast-[1.3] opacity-20 mix-blend-screen transition-transform duration-[40s] group-hover:scale-110" alt="Server Matrix Architecture">
+                <div class="absolute inset-0 bg-[#050505]/70 backdrop-blur-[1px]"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#020202] via-[#050505]/50 to-[#050505]"></div>
+            </div>
+            
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[clamp(8rem,20vw,18rem)] font-normal leading-none tracking-tighter text-[#D4C3A3] opacity-[0.05] z-[1]">0%</div>
+            
+            <div class="relative z-[2] flex flex-col items-center">
+                <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] uppercase mb-10 bg-black/40 px-4 py-2 rounded-full border border-white/5 backdrop-blur-md">Monte Carlo Stress Test · 10,000 Iterations</div>
+                <h2 class="text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-[1.2] tracking-tight text-[#F8F5F0]">
+                    Probability of ruin.<br>
+                    <em class="italic text-[#FDF3DB] font-normal tracking-tighter">Absolute zero.</em>
+                </h2>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="flex flex-col md:flex-row items-start md:items-end justify-between gap-12 p-8 md:p-20 bg-[#020202] relative z-10 border-t border-white/5">
+            <div class="flex items-center gap-4">
+                <span class="font-mono text-xs font-normal tracking-tighter text-[#A69576] uppercase">KAIRON</span>
+            </div>
+            
+            <div class="font-mono text-xs font-normal tracking-widest text-[#8E8A80] text-left md:text-right leading-[2.2] uppercase flex flex-col gap-2">
+                <div>Assets <span class="text-[#C2BCB0] pl-4">ETH · BTC · SOL</span></div>
+                <div>Routing <span class="text-[#C2BCB0] pl-4">Binance Futures API</span></div>
+                <div>Frequency <span class="text-[#C2BCB0] pl-4">4H Perpetual</span></div>
+                <div class="mt-8 opacity-40 text-xs tracking-[0.1em] normal-case">
+                    Past performance does not guarantee future results. Void where prohibited.
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Scroll Reveal Observer
+            const els = document.querySelectorAll(".reveal");
+            const obs = new IntersectionObserver(
+                (entries) => entries.forEach((e) => {
+                    if (e.isIntersecting) { e.target.classList.add("show"); obs.unobserve(e.target); }
+                }),
+                { threshold: 0.15 }
+            );
+            els.forEach((el) => obs.observe(el));
+
+            // WebGL Fluid Background
+            const canvas = document.getElementById("shader-canvas");
+            if (!canvas) return;
+            const gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: false });
+            if (!gl) return;
+
+            const VERT = `
+                attribute vec2 a_pos;
+                void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+            `;
+
+            const FRAG = `
+                precision highp float;
+                uniform vec2  u_res;
+                uniform float u_time;
+                uniform float u_scroll; 
+                void main() {
+                    vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);
+                    float t = u_time * 0.12; 
+                    vec2 focus = vec2(0.0, mix(0.1, -0.6, u_scroll));
+                    vec2 d = uv - focus;
+                    float r = length(d);
+                    float a = atan(d.y, d.x);
+                    
+                    float wave1 = sin(a * 2.0 + t) * cos(a * 1.5 - t * 1.2);
+                    float wave2 = sin(r * 4.0 - t * 2.0);
+                    float core = exp(-r * 3.5);
+                    float beam1 = smoothstep(0.85, 1.0, sin(a + t * 1.5));
+                    float beam2 = smoothstep(0.85, 1.0, cos(a * 2.0 - t));
+                    
+                    float intensity = max(0.0, (core * 1.4) + (wave1 * 0.15) + (wave2 * 0.1) + (beam1 * 0.25) + (beam2 * 0.2));
+                    
+                    vec3 bg = vec3(0.02, 0.02, 0.02);
+                    vec3 goldDark = vec3(0.18, 0.14, 0.09);
+                    vec3 goldMid = vec3(0.70, 0.55, 0.38);
+                    vec3 goldLight = vec3(1.0, 0.92, 0.75);
+                    
+                    vec3 col = mix(bg, goldDark, smoothstep(0.0, 0.25, intensity));
+                    col = mix(col, goldMid, smoothstep(0.25, 0.65, intensity));
+                    col = mix(col, goldLight, smoothstep(0.65, 1.2, intensity));
+                    col *= smoothstep(1.5, 0.0, r);
+                    
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `;
+
+            const compile = (type, src) => {
+                const s = gl.createShader(type);
+                gl.shaderSource(s, src); gl.compileShader(s);
+                return s;
+            };
+            const prog = gl.createProgram();
+            gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+            gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+            gl.linkProgram(prog); gl.useProgram(prog);
+
+            const buf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+            const loc = gl.getAttribLocation(prog, "a_pos");
+            gl.enableVertexAttribArray(loc);
+            gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+            const uRes    = gl.getUniformLocation(prog, "u_res");
+            const uTime   = gl.getUniformLocation(prog, "u_time");
+            const uScroll = gl.getUniformLocation(prog, "u_scroll");
+
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+            let raf, scrollVal = 0;
+
+            const resize = () => {
+                canvas.width  = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                gl.viewport(0, 0, canvas.width, canvas.height);
+            };
+            resize();
+            window.addEventListener("resize", resize);
+
+            const onScroll = () => {
+                const hero = canvas.parentElement;
+                const h = hero ? hero.offsetHeight : window.innerHeight;
+                scrollVal = Math.min(1, window.scrollY / h);
+            };
+            window.addEventListener("scroll", onScroll, { passive: true });
+
+            const start = performance.now();
+            const draw = () => {
+                const t = (performance.now() - start) / 1000;
+                gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.uniform2f(uRes, canvas.width, canvas.height);
+                gl.uniform1f(uTime, t);
+                gl.uniform1f(uScroll, scrollVal);
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                raf = requestAnimationFrame(draw);
+            };
+            draw();
+        });
+    </script>
+
+</body></html>

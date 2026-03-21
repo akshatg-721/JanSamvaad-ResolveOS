@@ -76,7 +76,7 @@ export function RecentGrievances() {
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-1">
         {grievances.map((g, index) => {
           const status = statusConfig[g.status as keyof typeof statusConfig];
           const StatusIcon = status.icon;
@@ -84,22 +84,26 @@ export function RecentGrievances() {
           return (
             <div
               key={g.ref}
-              className="group flex items-center justify-between p-3 rounded-lg hover:bg-secondary/50 transition-all duration-200 cursor-pointer animate-in fade-in slide-in-from-left-2"
+              className={cn(
+                "group flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer animate-in fade-in slide-in-from-left-2",
+                index % 2 === 0 ? "bg-secondary/20" : "bg-transparent",
+                "hover:bg-accent/5 hover:translate-x-1"
+              )}
               style={{ animationDelay: `${(index + 3) * 100}ms`, animationFillMode: "both" }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-sm font-bold text-accent group-hover:bg-accent/10 transition-all duration-200 font-mono">
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-slate-900 border border-white/5 flex items-center justify-center text-xs font-black text-blue-400 group-hover:bg-blue-500/10 group-hover:border-blue-500/20 transition-all duration-300 shadow-inner">
                   {g.ref.split('-')[1]}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{g.category}</p>
-                  <p className="text-xs text-muted-foreground">{g.citizen} • {g.time}</p>
+                  <p className="text-sm font-bold text-slate-100 tracking-tight group-hover:text-blue-400 transition-colors">{g.category}</p>
+                  <p className="text-[11px] text-slate-500 font-medium uppercase tracking-tighter">{g.citizen} • {g.time}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold text-muted-foreground">{g.ref}</span>
-                <div className={cn("flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider", status.bg, status.color)}>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-mono font-bold text-slate-600 group-hover:text-slate-400 transition-colors uppercase tracking-widest">{g.ref}</span>
+                <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm", status.bg, status.color)}>
                   <StatusIcon className="w-3 h-3" />
                   {status.label}
                 </div>

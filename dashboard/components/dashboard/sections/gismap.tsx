@@ -36,6 +36,7 @@ const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), 
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
 const ZoomControl = dynamic(() => import("react-leaflet").then((mod) => mod.ZoomControl), { ssr: false });
 const GeoJSON = dynamic(() => import("react-leaflet").then((mod) => mod.GeoJSON), { ssr: false });
+const Circle = dynamic(() => import("react-leaflet").then((mod) => mod.Circle), { ssr: false });
 
 const categoryIcons: Record<string, { icon: React.ReactNode, color: string }> = {
   water: { icon: <Droplets className="w-4 h-4" />, color: "#3b82f6" },
@@ -279,6 +280,24 @@ export function GisSection() {
             style={() => ({ color: "#ec4899", weight: 1, dashArray: "5, 5", fillOpacity: 0.1 })}
           />
         )}
+
+        {/* Heatmap Layer */}
+        {layers.heatmap && filteredTickets.map((t) => {
+          if (!t.latitude || !t.longitude) return null;
+          return (
+            <Circle
+              key={`heat-${t.id}`}
+              center={[t.latitude, t.longitude]}
+              radius={200}
+              pathOptions={{
+                fillColor: getUrgencyColor(t.severity),
+                fillOpacity: 0.15,
+                color: 'transparent',
+                stroke: false
+              }}
+            />
+          );
+        })}
 
         {layers.incidents && filteredTickets.map((t) => {
           if (!t.latitude || !t.longitude || !L) return null;

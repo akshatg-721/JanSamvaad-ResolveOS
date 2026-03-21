@@ -25,7 +25,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(operatorId, password);
-      router.push("/");
+      router.push("/demo");
     } catch (err: unknown) {
       setError(safeUiErrorMessage(err, "Login failed. Please check your credentials."));
     } finally {

@@ -168,6 +168,19 @@ router.post('/transcribe', async (req, res) => {
   const transcript = req.body.TranscriptionText || '';
   const phone = req.body.From || req.body.Called || '';
 
+  // Basic Input Validation for Transcription Webhook
+  if (!transcript || !phone) {
+    (req.log || logger).warn({ transcript, phone }, 'Missing transcription text or phone number. Skipping ticket creation.');
+    return res.status(400).send('Missing required parameters');
+  }
+
+  // Enhanced Transcription Failure Fallback
+  let effectiveTranscript = transcript;
+  if (!effectiveTranscript || effectiveTranscript.trim() === '') {
+    effectiveTranscript = 'No clear transcription available. Possible voice issues or silent recording.';
+    (req.log || logger).warn({ phone }, 'Empty transcription received. Using fallback text.');
+  }
+
   try {
     // Phase 1: AI Processing
     const sentimentInfo = await analyzeSentiment(transcript);

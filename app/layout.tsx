@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { JetBrains_Mono, Outfit, Space_Grotesk, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AuthProvider } from '@/components/auth-provider'
 import './globals.css'
 
 const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] });
@@ -51,7 +52,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} ${spaceGrotesk.variable} ${cormorant.variable} antialiased duration-500 ease-in-out transition-colors`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
           <Analytics />
         </ThemeProvider>
       </body>

@@ -15,7 +15,11 @@ const transport = isDevelopment
 
 const logger = pino(
   {
-    level
+    level,
+    redact: {
+      paths: ['phone', 'token', 'transcript', 'body.phone', 'body.token', 'Authorization', 'headers.authorization'],
+      censor: '****'
+    }
   },
   transport
 );

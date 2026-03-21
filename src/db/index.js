@@ -29,6 +29,7 @@ async function ensureDbReady() {
   try {
     await client.query('BEGIN');
     await client.query(`
+      CREATE EXTENSION IF NOT EXISTS pg_trgm;
       CREATE TABLE IF NOT EXISTS wards (
         id SERIAL PRIMARY KEY,
         name VARCHAR(120) NOT NULL UNIQUE
@@ -70,7 +71,19 @@ async function ensureDbReady() {
       ALTER TABLE tickets
       ADD COLUMN IF NOT EXISTS resolve_token VARCHAR(64),
       ADD COLUMN IF NOT EXISTS feedback_rating INTEGER,
-      ADD COLUMN IF NOT EXISTS feedback_text TEXT;
+      ADD COLUMN IF NOT EXISTS feedback_text TEXT,
+      ADD COLUMN IF NOT EXISTS sentiment VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS frustration_level VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS detected_language VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS translated_text TEXT,
+      ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8),
+      ADD COLUMN IF NOT EXISTS longitude DECIMAL(11, 8),
+      ADD COLUMN IF NOT EXISTS geo_address TEXT,
+      ADD COLUMN IF NOT EXISTS location_accuracy VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS nearby_landmarks TEXT,
+      ADD COLUMN IF NOT EXISTS weather_condition VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS temperature DECIMAL(5, 2),
+      ADD COLUMN IF NOT EXISTS weather_boosted BOOLEAN;
     `);
     await client.query(`
       ALTER TABLE tickets DROP CONSTRAINT IF EXISTS tickets_severity_check;

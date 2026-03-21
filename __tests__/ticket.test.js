@@ -32,6 +32,10 @@ describe('createTicket SLA deadline calculation', () => {
         return Promise.resolve({});
       }
 
+      if (typeof sql === 'string' && sql.includes('INTERVAL \'1 hour\'')) {
+        return Promise.resolve({ rows: [] });
+      }
+
       if (typeof sql === 'string' && sql.includes('SELECT id FROM contacts')) {
         return Promise.resolve({ rows: [{ id: 99 }] });
       }
@@ -109,6 +113,10 @@ describe('createTicket SLA deadline calculation', () => {
 
       if (sql === 'ROLLBACK') {
         return Promise.resolve({});
+      }
+
+      if (typeof sql === 'string' && sql.includes('INTERVAL \'1 hour\'')) {
+        return Promise.resolve({ rows: [] });
       }
 
       if (typeof sql === 'string' && sql.includes('SELECT id FROM contacts')) {

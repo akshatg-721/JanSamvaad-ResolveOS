@@ -66,7 +66,7 @@ export default function FeedbackPage() {
           </div>
           <h1 className="text-3xl font-bold mb-4">Ticket Resolved</h1>
           <p className="text-white/60 max-w-sm mx-auto">
-            Thank you for verifying the resolution of this grievance. Your feedback has been securely recorded on the ledger.
+            Thank you for verifying the resolution of this grievance. Your feedback has been securely recorded.
           </p>
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function FeedbackPage() {
           <div className="mt-6 pt-6 border-t border-white/10 text-center">
             <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 flex items-center justify-center gap-1.5">
               <ShieldCheck className="w-3 h-3 text-accent" />
-              Cryptographically Verified Session
+              Secure Feedback Portal
             </p>
           </div>
         </form>

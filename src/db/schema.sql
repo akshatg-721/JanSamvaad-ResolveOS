@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TABLE IF NOT EXISTS wards (
   id SERIAL PRIMARY KEY,
   name VARCHAR(120) NOT NULL UNIQUE
@@ -24,6 +26,18 @@ CREATE TABLE IF NOT EXISTS tickets (
   resolve_token VARCHAR(64),
   feedback_rating INTEGER,
   feedback_text TEXT,
+  sentiment VARCHAR(20),
+  frustration_level VARCHAR(20),
+  detected_language VARCHAR(50),
+  translated_text TEXT,
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  geo_address TEXT,
+  location_accuracy VARCHAR(50),
+  nearby_landmarks TEXT,
+  weather_condition VARCHAR(50),
+  temperature DECIMAL(5, 2),
+  weather_boosted BOOLEAN,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   closed_at TIMESTAMPTZ

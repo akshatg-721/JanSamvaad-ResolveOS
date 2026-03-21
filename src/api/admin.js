@@ -7,9 +7,7 @@ const router = express.Router();
 
 // Middleware to check for Admin role
 async function isAdmin(req, res, next) {
-  // Simple check: for now, we'll assume the operator login from .env is the admin
-  // In a real multi-user system, we would check user.role from DB
-  if (req.user && req.user.username === process.env.OPERATOR_USERNAME) {
+  if (req.user && req.user.role === 'admin') {
     return next();
   }
   return res.status(403).json({ error: 'Administrative privileges required' });

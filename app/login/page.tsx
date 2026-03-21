@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, UserCircle2, Lock, ArrowRight, Loader2, Zap } from "lucide-react";
 import { login } from "@/lib/api-client";
+import { Input } from "@/components/ui/input";
 
 function safeUiErrorMessage(err: unknown, fallback: string): string {
   const msg = (err as { message?: string })?.message?.trim() || "";
@@ -64,15 +65,15 @@ export default function LoginPage() {
                 Operator ID
               </label>
               <div className="relative group">
-                <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-accent transition-colors" />
-                <input
+                <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-accent transition-colors z-10" />
+                <Input
                   id="operatorId"
                   type="text"
                   placeholder="e.g. operator"
                   required
                   value={operatorId}
                   onChange={(e) => setOperatorId(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 outline-none focus:border-accent focus:bg-white/10 transition-all font-mono text-lg"
+                  className="w-full bg-white/5 border-white/10 rounded-2xl h-14 pl-12 pr-4 text-white placeholder:text-white/20 focus-visible:ring-accent focus-visible:border-accent focus:bg-white/10 transition-all font-mono text-lg"
                 />
               </div>
             </div>
@@ -87,15 +88,15 @@ export default function LoginPage() {
                 </button>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-accent transition-colors" />
-                <input
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-accent transition-colors z-10" />
+                <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 outline-none focus:border-accent focus:bg-white/10 transition-all text-lg tracking-[0.2em]"
+                  className="w-full bg-white/5 border-white/10 rounded-2xl h-14 pl-12 pr-4 text-white placeholder:text-white/20 focus-visible:ring-accent focus-visible:border-accent focus:bg-white/10 transition-all text-lg tracking-[0.2em]"
                 />
               </div>
             </div>
@@ -122,7 +123,7 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-white/10 text-center">
             <p className="text-xs font-bold tracking-widest uppercase text-white/40 flex items-center justify-center gap-2">
               <ShieldCheck className="w-4 h-4 text-accent" />
-              End-to-End Encrypted Session
+              Secure Government Portal
             </p>
           </div>
         </div>

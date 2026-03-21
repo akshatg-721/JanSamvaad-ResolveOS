@@ -48,14 +48,14 @@ function keywordFallback(text) {
 }
 
 function applyFrustrationUrgency(currentUrgency, frustrationLevel) {
-  const urgency = String(currentUrgency || 'medium').toLowerCase();
+  const urgency = String(currentUrgency || 'Medium').toLowerCase();
+  if (urgency === 'critical') return 'Critical';
+  
   if (frustrationLevel === 'very_high' || frustrationLevel === 'high') {
-    return 'high';
+    return 'High';
   }
-  if (urgency === 'low' || urgency === 'medium' || urgency === 'high') {
-    return urgency;
-  }
-  return 'medium';
+  const severityMap = { low: 'Low', medium: 'Medium', high: 'High' };
+  return severityMap[urgency] || 'Medium';
 }
 
 async function analyzeSentiment(text, fetchImpl = fetch) {

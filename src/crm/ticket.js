@@ -85,8 +85,12 @@ async function createTicket(phone, grievanceData) {
       contactId = insertContactResult.rows[0].id;
     }
 
+    const providedSeverity = String(grievanceData.severity || 'Medium').toLowerCase();
+    const severityMap = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+    const formattedSeverity = severityMap[providedSeverity] || 'Medium';
+
     const ref = generateTicketRef();
-    const slaDeadline = getSlaDeadline(grievanceData.severity);
+    const slaDeadline = getSlaDeadline(formattedSeverity);
 
     const insertTicketResult = await client.query(
       `INSERT INTO tickets (
@@ -102,7 +106,7 @@ async function createTicket(phone, grievanceData) {
         ref,
         grievanceData.category,
         grievanceData.ward_id,
-        grievanceData.severity,
+        formattedSeverity,
         'open',
         slaDeadline,
         grievanceData.sentiment || null,

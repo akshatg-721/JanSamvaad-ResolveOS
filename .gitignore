@@ -1,10 +1,12 @@
 node_modules/
 .env
-.env
-.env
-node_modules/
-.env
-frontend/dist/
+.env.*
+!.env.example
 *.log
 .DS_Store
 **/.DS_Store
+.next/
+_archive/
+dashboard/
+dist/
+coverage/

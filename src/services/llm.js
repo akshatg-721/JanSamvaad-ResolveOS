@@ -3,9 +3,20 @@ const logger = require('../utils/logger');
 
 const MODEL_NAME = 'gemini-2.5-flash';
 
+// JSON schema example embedded in prompt for consistent output
+const JSON_SCHEMA_EXAMPLE = `{
+  "category": "water",
+  "subcategory": "supply shortage",
+  "ward": "Ward 4",
+  "location": "Main Road near Old Market",
+  "summary": "Citizen reports no water supply for 3 days in Ward 4.",
+  "urgency": "High",
+  "language_detected": "Hinglish",
+  "sentiment": "negative"
+}`;
+
 async function transcribeAudio(recordingUrl) {
   // Twilio transcription is handled via /transcribe callback
-  // This function is kept for interface compatibility only
   return '';
 }
 
@@ -15,12 +26,34 @@ function fallbackIntent(transcript) {
     subcategory: 'general',
     ward: null,
     summary: String(transcript || '').slice(0, 100),
-    urgency: 'medium',
-    language_detected: 'hinglish'
+    urgency: 'Medium',
+    language_detected: 'unknown',
+    sentiment: 'neutral'
   };
 }
 
+function parseJsonSafely(rawText) {
+  if (!rawText) return null;
+  // Strip markdown code fences
+  const cleaned = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Second pass: extract first {...} block
+    const match = cleaned.match(/\{[\s\S]+\}/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch { return null; }
+    }
+    return null;
+  }
+}
+
 async function extractIntent(transcript, translatedText = '') {
+  if (!transcript || transcript.trim().length === 0) {
+    logger.warn('Empty transcript — skipping LLM extraction');
+    return fallbackIntent(transcript);
+  }
+
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     logger.warn('GEMINI_API_KEY is not set. Using fallback intent.');
@@ -28,29 +61,24 @@ async function extractIntent(transcript, translatedText = '') {
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const prompt = `
-You are a high-accuracy civic intake AI for JanSamvaad ResolveOS.
-Analyze the following citizen transcript (often in Hinglish, Tamil, or regional dialects).
+  const prompt = `You are a high-accuracy civic intake AI for JanSamvaad ResolveOS, a citizen grievance system in India.
 
-Extract:
-- category: one of [water, road, electricity, sanitation, other]
-- subcategory: brief descriptor
-- ward: ward name or number if mentioned, else null
-- location: specific street, area, or landmark mentioned
-- summary: one sentence summary in English
-- urgency: one of [Low, Medium, High, Critical]
-- language_detected: original language (e.g., Hinglish, Tamil, Hindi)
-- sentiment: [positive, neutral, negative]
+Analyze the citizen complaint below (often in Hinglish, Hindi, Tamil, or regional dialects) and extract structured information.
 
-Return ONLY valid JSON, no explanation, no markdown.
-If the transcript is in Tamil or mixed Hinglish, use your deep multilingual capabilities to extract intent accurately.
+RULES:
+1. Return ONLY valid JSON — no markdown, no explanation, no extra text.
+2. "category" MUST be one of: water, road, electricity, sanitation, other
+3. "urgency" MUST be one of: Low, Medium, High, Critical
+4. "sentiment" MUST be one of: positive, neutral, negative
+5. If a field is unknown, use null (not empty string).
+
+EXACT OUTPUT FORMAT:
+${JSON_SCHEMA_EXAMPLE}
 
 Original Transcript:
 ${transcript}
 
-English Translation:
-${translatedText}
-`;
+${translatedText ? `English Translation:\n${translatedText}` : ''}`;
 
   try {
     const result = await ai.models.generateContent({
@@ -59,14 +87,26 @@ ${translatedText}
     });
 
     const rawText = result.text ? result.text.trim() : '';
-    const cleaned = rawText
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/, '');
+    const parsed = parseJsonSafely(rawText);
 
-    return JSON.parse(cleaned);
+    if (!parsed) {
+      logger.warn({ rawText: rawText.slice(0, 200) }, 'LLM returned unparseable JSON — using fallback intent');
+      return fallbackIntent(transcript);
+    }
+
+    // Normalize fields to prevent downstream constraint violations
+    const validCategories = ['water', 'road', 'electricity', 'sanitation', 'other'];
+    const validUrgencies = ['Low', 'Medium', 'High', 'Critical'];
+    const validSentiments = ['positive', 'neutral', 'negative'];
+
+    return {
+      ...parsed,
+      category: validCategories.includes(parsed.category) ? parsed.category : 'other',
+      urgency: validUrgencies.includes(parsed.urgency) ? parsed.urgency : 'Medium',
+      sentiment: validSentiments.includes(parsed.sentiment) ? parsed.sentiment : 'neutral'
+    };
   } catch (error) {
-    logger.error({ err: error, transcript }, 'Gemini extraction failed. Using fallback intent.');
+    logger.error({ err: error, transcript: transcript.slice(0, 100) }, 'Gemini extraction failed. Using fallback intent.');
     return fallbackIntent(transcript);
   }
 }

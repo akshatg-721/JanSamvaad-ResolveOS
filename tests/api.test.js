@@ -1,8 +1,25 @@
 process.env.NODE_ENV = 'test';
 process.env.ENABLE_SLA_CRON = 'false';
+process.env.JWT_SECRET = 'test-secret-for-testing';
 
 const request = require('supertest');
 
+// Mock Twilio to prevent module-load crash with placeholder SIDs
+jest.mock('twilio', () => {
+  const mockCreate = jest.fn().mockResolvedValue({ sid: 'SM_test' });
+  const MockTwilio = jest.fn(() => ({ messages: { create: mockCreate } }));
+  // voice.js uses twilio.twiml.VoiceResponse
+  MockTwilio.twiml = {
+    VoiceResponse: class VoiceResponse {
+      gather(opts) { return { say: jest.fn() }; }
+      say() {}
+      toString() { return '<Response></Response>'; }
+    }
+  };
+  return MockTwilio;
+});
+
+// Mock DB
 const mockQuery = jest.fn();
 const mockConnect = jest.fn();
 
@@ -10,6 +27,12 @@ jest.mock('../src/db', () => ({
   query: (...args) => mockQuery(...args),
   connect: (...args) => mockConnect(...args)
 }));
+
+// Mock authenticateToken to auto-pass in tests
+jest.mock('../src/middleware/authenticateToken', () => (req, res, next) => {
+  req.user = { id: 1, username: 'testuser', role: 'admin' };
+  next();
+});
 
 const { app } = require('../server');
 

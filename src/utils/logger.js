@@ -17,7 +17,18 @@ const logger = pino(
   {
     level,
     redact: {
-      paths: ['phone', 'token', 'transcript', 'body.phone', 'body.token', 'Authorization', 'headers.authorization'],
+      paths: [
+        // Top-level keys
+        'phone', 'token', 'transcript', 'password', 'password_hash',
+        // Nested in body/payload
+        'body.phone', 'body.token', 'body.password', 'body.transcript',
+        'payload.phone', 'payload.token', 'payload.password',
+        // HTTP headers
+        'headers.authorization', 'headers.cookie',
+        'req.headers.authorization', 'req.headers.cookie',
+        // Auth context
+        'Authorization',
+      ],
       censor: '****'
     }
   },

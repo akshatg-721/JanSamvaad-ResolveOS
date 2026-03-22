@@ -74,3 +74,13 @@ CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tickets_contact_id ON tickets(contact_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_sla_deadline ON tickets(sla_deadline);
 CREATE INDEX IF NOT EXISTS idx_call_consents_phone ON call_consents(phone);
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) DEFAULT 'operator',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);

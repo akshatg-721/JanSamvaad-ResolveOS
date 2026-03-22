@@ -1,3 +1,7 @@
+/**
+ * Retries an async task with exponential backoff.
+ * Immediately throws on client errors (4xx) without retrying.
+ */
 async function retryWithBackoff(task, options = {}) {
   const {
     retries = 3,
@@ -15,13 +19,20 @@ async function retryWithBackoff(task, options = {}) {
       return await task(attempt + 1);
     } catch (error) {
       lastError = error;
-      attempt += 1;
-      if (attempt >= retries) {
-        break;
+
+      // Don't retry client errors (4xx) — they won't resolve on retry
+      const status = error?.response?.status ?? error?.status;
+      if (status >= 400 && status < 500) {
+        throw error;
       }
+
+      attempt += 1;
+      if (attempt >= retries) break;
+
       if (typeof onRetry === 'function') {
         onRetry(error, attempt);
       }
+
       await new Promise((resolve) => setTimeout(resolve, delay));
       delay *= factor;
     }
@@ -30,7 +41,4 @@ async function retryWithBackoff(task, options = {}) {
   throw lastError;
 }
 
-module.exports = {
-  retryWithBackoff
-};
-
+module.exports = { retryWithBackoff };

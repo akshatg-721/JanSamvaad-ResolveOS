@@ -4,6 +4,7 @@ import { JetBrains_Mono, Outfit, Space_Grotesk, Cormorant_Garamond } from 'next/
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/components/auth-provider'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] });
@@ -55,6 +56,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
           </AuthProvider>
+          <Toaster position="bottom-right" richColors closeButton />
           <Analytics />
         </ThemeProvider>
       </body>

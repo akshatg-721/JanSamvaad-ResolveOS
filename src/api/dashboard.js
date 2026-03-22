@@ -1,4 +1,5 @@
 const express = require('express');
+const { z } = require('zod');
 const pool = require('../db');
 const authenticateToken = require('../middleware/authenticateToken');
 const logger = require('../utils/logger');
@@ -8,18 +9,48 @@ const crypto = require('crypto');
 
 const router = express.Router();
 
+// ── Validation schemas ──────────────────────────────────────────────────────
+const createTicketSchema = z.object({
+  category: z.string().min(1).max(50).optional().default('General'),
+  ward_id: z.number().int().positive().nullable().optional(),
+  severity: z.enum(['Critical', 'High', 'Medium', 'Low']).optional().default('Medium'),
+  phone: z.string().optional()
+});
+
+const ticketQuerySchema = z.object({
+  status: z.enum(['open', 'in_progress', 'in-progress', 'resolved', 'closed', 'all']).optional(),
+  severity: z.enum(['Critical', 'High', 'Medium', 'Low', 'all']).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional().default(100)
+});
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 function maskPhone(phone) {
-  if (!phone || phone.length < 4) {
-    return phone || null;
-  }
+  if (!phone || phone.length < 4) return phone || null;
   const normalized = String(phone);
   const prefix = normalized.startsWith('+91') ? '+91' : normalized.slice(0, 3);
   const suffix = normalized.slice(-4);
   return `${prefix}******${suffix}`;
 }
 
-router.get('/api/tickets', authenticateToken, async (req, res) => {
+// ── GET /api/tickets ─────────────────────────────────────────────────────────
+router.get('/api/tickets', authenticateToken, async (req, res, next) => {
   try {
+    const query = ticketQuerySchema.parse(req.query);
+    const conditions = [];
+    const params = [];
+
+    if (query.status && query.status !== 'all') {
+      params.push(query.status);
+      conditions.push(`t.status = $${params.length}`);
+    }
+    if (query.severity && query.severity !== 'all') {
+      params.push(query.severity);
+      conditions.push(`t.severity = $${params.length}`);
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(query.limit);
+
     const { rows } = await pool.query(
       `SELECT
          t.*,
@@ -28,47 +59,43 @@ router.get('/api/tickets', authenticateToken, async (req, res) => {
        FROM tickets t
        LEFT JOIN contacts c ON c.id = t.contact_id
        LEFT JOIN wards w ON w.id = t.ward_id
+       ${where}
        ORDER BY t.created_at DESC
-       LIMIT 100`
+       LIMIT $${params.length}`,
+      params
     );
 
-    const tickets = rows.map((row) => ({
-      ...row,
-      phone: maskPhone(row.phone)
-    }));
-
+    const tickets = rows.map((row) => ({ ...row, phone: maskPhone(row.phone) }));
     res.json(tickets);
   } catch (error) {
+    if (error.name === 'ZodError') return res.status(422).json({ error: 'Invalid query parameters', details: error.errors });
     (req.log || logger).error({ err: error }, 'Failed to fetch tickets');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.post('/api/tickets', authenticateToken, async (req, res) => {
+// ── POST /api/tickets ────────────────────────────────────────────────────────
+router.post('/api/tickets', authenticateToken, async (req, res, next) => {
   try {
-    const { category, ward_id, severity, phone } = req.body;
-    
+    const body = createTicketSchema.parse(req.body);
     const grievanceData = {
-      category: category || 'General',
-      ward_id: ward_id || null,
-      severity: severity || 'Medium'
+      category: body.category,
+      ward_id: body.ward_id || null,
+      severity: body.severity
     };
-    
-    const contactPhone = phone || '+910000000000';
-    
+    const contactPhone = body.phone || '+910000000000';
     const ticket = await createTicket(contactPhone, grievanceData);
-    
-    // Phase 6: Multi-Channel Notifications
     await notifyNewTicket(ticket);
-    
     res.status(201).json(ticket);
   } catch (error) {
+    if (error.name === 'ZodError') return res.status(422).json({ error: 'Validation failed', details: error.errors });
     (req.log || logger).error({ err: error }, 'Failed to create ticket manually');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.get('/api/stats', authenticateToken, async (req, res) => {
+// ── GET /api/stats ───────────────────────────────────────────────────────────
+router.get('/api/stats', authenticateToken, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT
@@ -86,30 +113,28 @@ router.get('/api/stats', authenticateToken, async (req, res) => {
     const total = open + closed;
     const slaHitRate = total === 0 ? '100.0%' : `${((closed / total) * 100).toFixed(1)}%`;
 
-    res.json({
-      open,
-      closed,
-      breach_risk: rows[0].breach_risk || 0,
-      slaHitRate
-    });
+    res.json({ open, closed, breach_risk: rows[0].breach_risk || 0, slaHitRate });
   } catch (error) {
     (req.log || logger).error({ err: error }, 'Failed to fetch dashboard stats');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.get('/api/wards', authenticateToken, async (req, res) => {
+// ── GET /api/wards ───────────────────────────────────────────────────────────
+router.get('/api/wards', authenticateToken, async (req, res, next) => {
   try {
-    const { rows } = await pool.query(`SELECT DISTINCT ward_id FROM tickets WHERE ward_id IS NOT NULL ORDER BY ward_id`);
-    const wards = rows.map(r => r.ward_id.toString());
-    res.json(wards);
+    const { rows } = await pool.query(
+      `SELECT DISTINCT ward_id FROM tickets WHERE ward_id IS NOT NULL ORDER BY ward_id`
+    );
+    res.json(rows.map((r) => r.ward_id.toString()));
   } catch (error) {
     (req.log || logger).error({ err: error }, 'Failed to fetch wards');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.get('/api/activity', authenticateToken, async (req, res) => {
+// ── GET /api/activity ────────────────────────────────────────────────────────
+router.get('/api/activity', authenticateToken, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT t.id, t.ref, t.created_at, t.category, t.status, t.severity, c.phone
@@ -118,12 +143,12 @@ router.get('/api/activity', authenticateToken, async (req, res) => {
        ORDER BY t.created_at DESC
        LIMIT 50`
     );
-    res.json(rows.map(r => {
+    res.json(rows.map((r) => {
       let type = 'system';
-      let message = `System initialized Ticket ${r.ref}`;
+      let message = `Ticket ${r.ref} registered`;
       if (r.status === 'resolved' || r.status === 'closed') {
         type = 'verify';
-        message = `Verified & Resolved ${r.ref}`;
+        message = `Resolved: ${r.ref}`;
       } else if (r.severity === 'Critical') {
         type = 'escalation';
         message = `Critical alert: ${r.ref} (${r.category})`;
@@ -135,17 +160,21 @@ router.get('/api/activity', authenticateToken, async (req, res) => {
         id: String(r.id),
         type,
         message,
-        isAlert: type === 'escalation' || type === 'alert',
-        time: new Date(r.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        isAlert: type === 'escalation',
+        phone: maskPhone(r.phone),
+        time: new Date(r.created_at).toLocaleTimeString('en-IN', {
+          hour: '2-digit', minute: '2-digit', hour12: false
+        }),
       };
     }));
   } catch (error) {
     (req.log || logger).error({ err: error }, 'Failed to fetch activities');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.get('/api/analytics', authenticateToken, async (req, res) => {
+// ── GET /api/analytics ───────────────────────────────────────────────────────
+router.get('/api/analytics', authenticateToken, async (req, res, next) => {
   try {
     const { rows: tickets } = await pool.query(`
       SELECT 
@@ -154,8 +183,7 @@ router.get('/api/analytics', authenticateToken, async (req, res) => {
         CASE WHEN status = 'closed' AND closed_at > sla_deadline THEN 1 ELSE 0 END as is_breach
       FROM tickets
     `);
-    
-    // 1. Category Distribution
+
     const categoryTrend = Object.entries(
       tickets.reduce((acc, t) => {
         acc[t.category] = (acc[t.category] || 0) + 1;
@@ -164,52 +192,35 @@ router.get('/api/analytics', authenticateToken, async (req, res) => {
     ).map(([cat, count], i) => {
       const colors = ['var(--blue)', 'var(--red)', 'var(--green)', 'var(--orange)', 'var(--purple)'];
       return { cat, count, color: colors[i % colors.length] };
-    }).sort((a,b) => b.count - a.count);
+    }).sort((a, b) => b.count - a.count);
 
-    // 2. Hourly Intake
     const hourlyCounts = Array(24).fill(0);
-    tickets.forEach(t => {
-      const hr = new Date(t.created_at).getHours();
-      hourlyCounts[hr]++;
-    });
+    tickets.forEach((t) => { hourlyCounts[new Date(t.created_at).getHours()]++; });
     const hourlyData = hourlyCounts.map((count, i) => ({ hour: String(i).padStart(2, '0'), count }));
 
-    // 3. Ward Performance
     const wardStatsMap = tickets.reduce((acc, t) => {
       const wid = t.ward_id || 0;
       if (!acc[wid]) {
-        acc[wid] = { 
-          ward: `Ward ${wid}`, 
-          open: 0, 
-          resolved: 0, 
-          breached: 0, 
-          total_res_hrs: 0,
-          satisfaction_total: 0,
-          feedback_count: 0
-        };
+        acc[wid] = { ward: `Ward ${wid}`, open: 0, resolved: 0, breached: 0, total_res_hrs: 0, satisfaction_total: 0, feedback_count: 0 };
       }
       if (t.status === 'closed') {
         acc[wid].resolved++;
         acc[wid].total_res_hrs += (t.resolution_hours || 0);
         if (t.is_breach) acc[wid].breached++;
-        if (t.feedback_rating) {
-          acc[wid].satisfaction_total += t.feedback_rating;
-          acc[wid].feedback_count++;
-        }
+        if (t.feedback_rating) { acc[wid].satisfaction_total += t.feedback_rating; acc[wid].feedback_count++; }
       } else {
         acc[wid].open++;
       }
       return acc;
     }, {});
-    
-    const wardStats = Object.values(wardStatsMap).map(w => ({
+
+    const wardStats = Object.values(wardStatsMap).map((w) => ({
       ...w,
       avgResolutionHrs: w.resolved > 0 ? (w.total_res_hrs / w.resolved).toFixed(1) : 0,
       citizenSatisfaction: w.feedback_count > 0 ? Math.round((w.satisfaction_total / w.feedback_count) * 20) : 85,
       slaRate: w.resolved > 0 ? Math.round(((w.resolved - w.breached) / w.resolved) * 100) : 100
     }));
 
-    // 4. Weekly SLA Performance
     const slaPerformance = [
       { week: 'W-4', onTime: 82, breached: 18 },
       { week: 'W-3', onTime: 85, breached: 15 },
@@ -217,68 +228,32 @@ router.get('/api/analytics', authenticateToken, async (req, res) => {
       { week: 'W-1', onTime: 94, breached: 6 }
     ];
 
-    res.json({
-      categoryTrend,
-      hourlyData,
-      wardStats,
-      slaPerformance
-    });
+    res.json({ categoryTrend, hourlyData, wardStats, slaPerformance });
   } catch (error) {
     (req.log || logger).error({ err: error }, 'Failed to fetch analytics');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.post('/api/tickets/:id/generate-qr', authenticateToken, async (req, res) => {
+// ── POST /api/tickets/:id/generate-qr ────────────────────────────────────────
+router.post('/api/tickets/:id/generate-qr', authenticateToken, async (req, res, next) => {
   try {
-    const ticketId = req.params.id;
+    const ticketId = z.coerce.number().int().positive().parse(req.params.id);
     const token = crypto.randomBytes(8).toString('hex');
     const result = await pool.query(
       `UPDATE tickets SET resolve_token = $1 WHERE id = $2 RETURNING id`,
       [token, ticketId]
     );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Ticket not found' });
-    }
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Ticket not found' });
     res.json({ token });
   } catch (error) {
+    if (error.name === 'ZodError') return res.status(422).json({ error: 'Invalid ticket id' });
     (req.log || logger).error({ err: error }, 'Failed to generate QR token');
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.post('/api/tickets/:id/resolve', async (req, res) => {
-  try {
-    const ticketId = req.params.id;
-    const { token, rating, text } = req.body;
-    if (!token) {
-      return res.status(400).json({ error: 'Missing resolution token' });
-    }
-    const { rows } = await pool.query(
-      `SELECT resolve_token FROM tickets WHERE id = $1`,
-      [ticketId]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Ticket not found' });
-    }
-    if (rows[0].resolve_token !== token) {
-      return res.status(403).json({ error: 'Invalid or expired resolution token' });
-    }
-    await pool.query(
-      `UPDATE tickets 
-       SET status = 'closed', 
-           closed_at = NOW(), 
-           resolve_token = NULL,
-           feedback_rating = $1,
-           feedback_text = $2
-       WHERE id = $3`,
-      [rating || null, text || '', ticketId]
-    );
-    res.json({ success: true, message: 'Ticket resolved successfully' });
-  } catch (error) {
-    (req.log || logger).error({ err: error }, 'Failed to resolve ticket via QR');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// NOTE: POST /api/tickets/:id/resolve is intentionally NOT here.
+// The authoritative resolve endpoint (with Twilio notification + transaction) lives in src/api/evidence.js
 
 module.exports = router;

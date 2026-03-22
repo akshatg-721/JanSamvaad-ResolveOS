@@ -10,7 +10,7 @@ export const rateLimitConfig = {
 };
 
 export function checkRateLimit(req: NextRequest, identifier?: string): void {
-  const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown';
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
   const key = identifier ? `${identifier}-${ip}` : ip;
   
   const now = Date.now();

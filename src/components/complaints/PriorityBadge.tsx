@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
-import { Severity } from '@prisma/client';
+
+type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export function PriorityBadge({ severity }: { severity: Severity }) {
   const colors: Record<Severity, string> = {

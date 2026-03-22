@@ -1,6 +1,4 @@
 import { z, ZodSchema } from 'zod';
-import { validationErrorResponse } from '../api-response';
-
 export * from './common.validator';
 export * from './user.validator';
 export * from './complaint.validator';
@@ -15,11 +13,8 @@ export async function validateRequest<T>(schema: ZodSchema<T>, data: unknown): P
   } catch (error) {
     if (error instanceof z.ZodError) {
       // Map Zod errors to a cleaner format
-      const formattedErrors = error.errors.map(err => ({
-        path: err.path.join('.'),
-        message: err.message
-      }));
-      throw validationErrorResponse(formattedErrors);
+      const message = error.errors[0]?.message || 'Validation failed';
+      throw new Error(message);
     }
     throw error;
   }

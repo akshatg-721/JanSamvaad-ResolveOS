@@ -2,17 +2,33 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { Complaint, User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { MapPin, Clock, MessageSquare, ThumbsUp } from 'lucide-react';
+
+type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 interface ComplaintCardProps {
   complaint: Complaint & { 
     user?: User; 
-    _count?: { comments: number; upvotes: number; attachments: number } 
+    _count?: { comments?: number; upvotes?: number; attachments?: number } 
   };
   onClick?: () => void;
 }
 
 export function ComplaintCard({ complaint, onClick }: ComplaintCardProps) {
+  const severityByPriority: Record<number, Severity> = {
+    0: 'LOW',
+    1: 'MEDIUM',
+    2: 'HIGH',
+    3: 'CRITICAL',
+  };
+  const severity = severityByPriority[complaint.priority] || 'LOW';
+  const location = (complaint.location as Prisma.JsonObject | null) || null;
+  const address =
+    typeof location?.address === 'string'
+      ? location.address
+      : 'Location unavailable';
+
   return (
     <Card 
       className="group hover:shadow-md transition-all duration-200 cursor-pointer border hover:border-primary/20"
@@ -22,7 +38,7 @@ export function ComplaintCard({ complaint, onClick }: ComplaintCardProps) {
         <div className="flex justify-between items-start mb-2">
           <div className="flex gap-2">
             <StatusBadge status={complaint.status as any} />
-            <PriorityBadge severity={complaint.severity} />
+            <PriorityBadge severity={severity} />
           </div>
           <span className="text-xs text-muted-foreground tabular-nums flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -41,7 +57,7 @@ export function ComplaintCard({ complaint, onClick }: ComplaintCardProps) {
         
         <div className="flex items-center text-xs text-muted-foreground gap-1">
           <MapPin className="w-3 h-3" />
-          <span className="truncate">{complaint.address}</span>
+          <span className="truncate">{address}</span>
         </div>
       </CardContent>
       

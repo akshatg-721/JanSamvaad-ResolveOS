@@ -1,2 +1,4 @@
-// Placeholder export file for src components complaints
-// Export modules from this directory here
+export * from './status-badge';
+export * from './category-badge';
+export * from './PriorityBadge';
+export * from './ComplaintCard';

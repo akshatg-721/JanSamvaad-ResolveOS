@@ -1,0 +1,142 @@
+// This file is committed to Git and should be edited to reflect the structure of your database
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  OFFICIAL
+  ADMIN
+}
+
+enum ComplaintStatus {
+  PENDING
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum ComplaintCategory {
+  ROADS
+  WATER
+  ELECTRICITY
+  SANITATION
+  PUBLIC_SAFETY
+  TRANSPORTATION
+  OTHER
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  password            String
+  name                String
+  phone               String?
+  role                UserRole  @default(USER)
+  avatar              String?
+  emailVerified       DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  complaints         Complaint[]
+  assignedComplaints Complaint[]     @relation("AssignedComplaints")
+  attachments        Attachment[]
+  statusHistories    StatusHistory[]
+  upvotes            Upvote[]
+
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+}
+
+model Complaint {
+  id           String            @id @default(cuid())
+  title        String            @db.VarChar(255)
+  description  String            @db.Text
+  category     ComplaintCategory
+  status       ComplaintStatus   @default(PENDING)
+  location     Json?
+  priority     Int               @default(0)
+  userId       String
+  assignedToId String?
+  resolvedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedTo    User?           @relation("AssignedComplaints", fields: [assignedToId], references: [id])
+  attachments   Attachment[]
+  statusHistory StatusHistory[]
+  upvotes       Upvote[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([assignedToId])
+  @@index([createdAt])
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  complaintId  String?
+  userId       String
+  filename     String
+  cloudinaryId String?
+  url          String
+  thumbnailUrl String?
+  mimeType     String
+  size         Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  complaint Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([complaintId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model StatusHistory {
+  id          String          @id @default(cuid())
+  complaintId String
+  fromStatus  ComplaintStatus
+  toStatus    ComplaintStatus
+  changedById String
+  comment     String?
+  createdAt   DateTime        @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  changedBy User      @relation(fields: [changedById], references: [id])
+
+  @@index([complaintId])
+  @@index([changedById])
+  @@index([createdAt])
+}
+
+model Upvote {
+  complaintId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([complaintId, userId])
+  @@index([userId])
+}

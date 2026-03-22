@@ -12,12 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { COMPLAINT_CATEGORY } from '@/constants/complaint.constants';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
+import { FileUpload } from '@/components/ui/file-upload';
+import { Paperclip } from 'lucide-react';
 
 type ComplaintFormValues = z.infer<typeof createComplaintSchema>;
 
 export function CreateComplaintForm({ onSuccess }: { onSuccess?: () => void }) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedAttachments, setUploadedAttachments] = useState<string[]>([]);
 
   const form = useForm<ComplaintFormValues>({
     resolver: zodResolver(createComplaintSchema),
@@ -27,14 +30,20 @@ export function CreateComplaintForm({ onSuccess }: { onSuccess?: () => void }) {
       category: COMPLAINT_CATEGORY.OTHER,
       location: {
         address: '',
-      }
+      },
+      attachmentIds: []
     }
   });
+
+  const handleUploadComplete = (id: string) => {
+    const newAttachments = [...uploadedAttachments, id];
+    setUploadedAttachments(newAttachments);
+    form.setValue('attachmentIds', newAttachments);
+  };
 
   async function onSubmit(data: ComplaintFormValues) {
     setIsSubmitting(true);
     try {
-      // API call will be replaced by React Query/fetch
       const res = await fetch('/api/complaints', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,6 +57,7 @@ export function CreateComplaintForm({ onSuccess }: { onSuccess?: () => void }) {
         description: "Your complaint has been successfully submitted.",
       });
       form.reset();
+      setUploadedAttachments([]);
       onSuccess?.();
     } catch (error) {
       toast({
@@ -134,7 +144,21 @@ export function CreateComplaintForm({ onSuccess }: { onSuccess?: () => void }) {
           )}
         />
 
-        {/* File Upload component integration will go here from Phase 0 */}
+        <div className="space-y-4">
+          <FormLabel className="flex items-center gap-2 text-sm font-medium">
+            <Paperclip className="w-4 h-4" />
+            Evidence & Attachments
+          </FormLabel>
+          <FileUpload 
+            onUploadComplete={handleUploadComplete} 
+            maxFiles={5}
+          />
+          {uploadedAttachments.length > 0 && (
+            <p className="text-xs text-muted-foreground italic">
+              {uploadedAttachments.length} file(s) attached to this complaint.
+            </p>
+          )}
+        </div>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? "Submitting..." : "Submit Complaint"}

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PAGINATION } from '../constants/api.constants';
+import { PAGINATION } from '@/constants/api.constants';
 
 // For UUIDs/Cuids
 export const idParamSchema = z.object({

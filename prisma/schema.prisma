@@ -1,5 +1,9 @@
+// This file is committed to Git and should be edited to reflect the structure of your database
+// https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
@@ -7,10 +11,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+enum UserRole {
   USER
-  ADMIN
   OFFICIAL
+  ADMIN
 }
 
 enum ComplaintStatus {
@@ -32,148 +36,107 @@ enum ComplaintCategory {
   OTHER
 }
 
-enum Severity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
 model User {
-  id                  String             @id @default(cuid())
-  email               String             @unique
-  name                String
-  passwordHash        String
-  phone               String?
-  role                Role               @default(USER)
-  avatar              String?
-  emailVerified       DateTime?
-  failedLoginAttempts Int                @default(0)
-  lockedUntil         DateTime?
-  lastLoginAt         DateTime?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  id                    String     @id @default(cuid())
+  email                 String     @unique
+  password              String
+  name                  String
+  phone                 String?
+  role                  UserRole   @default(USER)
+  avatar                String?
+  emailVerified         DateTime?
+  failedLoginAttempts   Int        @default(0)
+  lockedUntil           DateTime?
+  lastLoginAt           DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  deletedAt             DateTime?
 
-  complaints          Complaint[]        @relation("UserComplaints")
-  assignedComplaints  Complaint[]        @relation("AssignedComplaints")
-  attachments         Attachment[]
-  statusHistories     StatusHistory[]
-  comments            Comment[]
-  upvotes             Upvote[]
+  complaints            Complaint[]
+  assignedComplaints    Complaint[] @relation("AssignedComplaints")
+  attachments           Attachment[]
+  statusHistories       StatusHistory[]
+  upvotes               Upvote[]
 
   @@index([email])
+  @@index([role])
+  @@index([createdAt])
 }
 
 model Complaint {
-  id          String            @id @default(cuid())
-  title       String
-  description String            @db.Text
-  category    ComplaintCategory
-  status      ComplaintStatus   @default(PENDING)
-  severity    Severity          @default(LOW)
-  
-  // Location
-  address     String
-  city        String?
-  state       String?
-  pincode     String?
-  lat         Float?
-  lng         Float?
+  id                String             @id @default(cuid())
+  title             String             @db.VarChar(255)
+  description       String             @db.Text
+  category          ComplaintCategory
+  status            ComplaintStatus    @default(PENDING)
+  location          Json?
+  priority          Int                @default(0)
+  userId            String
+  assignedToId      String?
+  resolvedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
 
-  userId      String
-  user        User              @relation("UserComplaints", fields: [userId], references: [id], onDelete: Cascade)
-  
-  assignedToId String?
-  assignedTo   User?            @relation("AssignedComplaints", fields: [assignedToId], references: [id])
-
-  tokens      String?
-  slaDeadline DateTime?
-  resolvedAt  DateTime?
-  deletedAt   DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  attachments Attachment[]
-  statusHistory StatusHistory[]
-  comments      Comment[]
-  upvotes       Upvote[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedTo        User?              @relation("AssignedComplaints", fields: [assignedToId], references: [id])
+  attachments       Attachment[]
+  statusHistory     StatusHistory[]
+  upvotes           Upvote[]
 
   @@index([userId])
-  @@index([assignedToId])
   @@index([status])
   @@index([category])
-  @@index([lat, lng])
+  @@index([assignedToId])
+  @@index([createdAt])
 }
 
 model Attachment {
-  id           String    @id @default(cuid())
-  filename     String
-  cloudinaryId String
-  url          String
-  thumbnailUrl String?
-  mediumUrl    String?
-  mimeType     String
-  size         Int
-  width        Int?
-  height       Int?
-  
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  complaintId  String?
-  complaint    Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  id                String     @id @default(cuid())
+  complaintId       String?
+  userId            String
+  filename          String
+  cloudinaryId      String?
+  url               String
+  thumbnailUrl      String?
+  mimeType          String
+  size              Int
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([complaintId])
-}
-
-model StatusHistory {
-  id          String          @id @default(cuid())
-  complaintId String
-  complaint   Complaint       @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  
-  fromStatus  ComplaintStatus
-  toStatus    ComplaintStatus
-  
-  changedById String
-  changedBy   User            @relation(fields: [changedById], references: [id], onDelete: Restrict)
-  
-  comment     String?         @db.Text
-  createdAt   DateTime        @default(now())
-
-  @@index([complaintId])
-}
-
-model Comment {
-  id          String    @id @default(cuid())
-  content     String    @db.Text
-  isOfficial  Boolean   @default(false)
-
-  complaintId String
-  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  complaint         Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([complaintId])
   @@index([userId])
+  @@index([createdAt])
+}
+
+model StatusHistory {
+  id                String     @id @default(cuid())
+  complaintId       String
+  fromStatus        ComplaintStatus
+  toStatus          ComplaintStatus
+  changedById       String
+  comment           String?
+  createdAt         DateTime   @default(now())
+
+  complaint         Complaint  @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  changedBy         User       @relation(fields: [changedById], references: [id])
+
+  @@index([complaintId])
+  @@index([changedById])
+  @@index([createdAt])
 }
 
 model Upvote {
-  id          String    @id @default(cuid())
-  
-  complaintId String
-  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  complaintId       String
+  userId            String
+  createdAt         DateTime   @default(now())
 
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaint         Complaint  @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime  @default(now())
-
-  @@unique([complaintId, userId]) // User can only upvote a complaint once
+  @@id([complaintId, userId])
+  @@index([userId])
 }

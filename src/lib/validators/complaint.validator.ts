@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { COMPLAINT_CATEGORY, COMPLAINT_STATUS } from '../constants/complaint.constants';
-import { VALIDATION_LIMITS } from '../constants/validation.constants';
+import { COMPLAINT_CATEGORY, COMPLAINT_STATUS } from '@/constants/complaint.constants';
+import { VALIDATION_LIMITS } from '@/constants/validation.constants';
 import { paginationSchema } from './common.validator';
 
 export const createComplaintSchema = z.object({

@@ -2,14 +2,19 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, UserCircle2, Lock, ArrowRight, Loader2, Zap } from "lucide-react";
-import { login } from "@/lib/api-client";
+import { ShieldCheck, UserCircle2, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { Input } from "@/components/ui/input";
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MS = 60_000;
 
 function safeUiErrorMessage(err: unknown, fallback: string): string {
   const msg = (err as { message?: string })?.message?.trim() || "";
   if (!msg) return fallback;
   if (msg.includes("<") || msg.toLowerCase().includes("doctype html")) return fallback;
+  if (msg === "CredentialsSignin") return "Invalid operator ID or security key.";
+  if (msg.toLowerCase().includes("locked")) return "Account is temporarily locked. Please try again later.";
   return msg;
 }
 
@@ -19,14 +24,45 @@ export default function LoginPage() {
   const [operatorId, setOperatorId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const now = Date.now();
+    if (lockedUntil && now < lockedUntil) {
+      const secondsLeft = Math.ceil((lockedUntil - now) / 1000);
+      setError(`Too many failed attempts. Retry in ${secondsLeft}s.`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await login(operatorId, password);
-      router.push("/demo");
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: operatorId,
+        password: password
+      });
+      
+      if (res?.error) {
+        const nextAttempts = failedAttempts + 1;
+        setFailedAttempts(nextAttempts);
+        if (nextAttempts >= MAX_FAILED_ATTEMPTS) {
+          setLockedUntil(Date.now() + LOCKOUT_MS);
+          setError("Too many failed attempts. Please wait 60 seconds and try again.");
+        } else {
+          setError(safeUiErrorMessage(res.error, "Login failed. Please check your credentials."));
+        }
+      } else {
+        setFailedAttempts(0);
+        setLockedUntil(null);
+        const callbackUrl =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("callbackUrl")
+            : null;
+        router.push(callbackUrl || "/demo");
+      }
     } catch (err: unknown) {
       setError(safeUiErrorMessage(err, "Login failed. Please check your credentials."));
     } finally {
@@ -103,7 +139,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (!!lockedUntil && Date.now() < lockedUntil)}
               className="w-full relative group overflow-hidden bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-lg py-4 rounded-2xl transition-all active:scale-[0.98] mt-4"
             >
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />

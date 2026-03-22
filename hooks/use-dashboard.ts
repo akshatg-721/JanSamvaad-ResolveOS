@@ -41,23 +41,32 @@ const fetcher = (path: string) => apiFetch(path);
 
 // ── useDashboardStats ─────────────────────────────────────────────────────────
 export function useDashboardStats() {
-  const { data, error, isLoading, mutate } = useSWR<TicketStats>('/api/stats', fetcher, {
+  const { data, error, isLoading, mutate } = useSWR<any>('/api/admin/stats', fetcher, {
     refreshInterval: 30000,
     onError: (err) => {
       toast.error(`Stats failed to load: ${err.message}`);
     }
   });
-  return { stats: data, isLoading, error, refresh: mutate };
+  
+  const mappedStats = data?.data ? {
+    open: data.data.pendingComplaints || 0,
+    closed: data.data.resolvedComplaints || 0,
+    breach_risk: 0,
+    slaHitRate: `${Math.round(data.data.resolutionRate || 0)}%`
+  } : undefined;
+  
+  return { stats: mappedStats as TicketStats | undefined, isLoading, error, refresh: mutate };
 }
 
 // ── useTickets ────────────────────────────────────────────────────────────────
 export function useTickets(params?: { status?: string; severity?: string; limit?: number }) {
-  const queryString = params
-    ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v).map(([k, v]) => [k, String(v)])).toString()
-    : '';
+  const queryParams = new URLSearchParams();
+  if (params?.status && params.status !== 'all') queryParams.set('status', params.status.toUpperCase());
+  if (params?.limit) queryParams.set('limit', String(params.limit));
+  const queryString = queryParams.toString() ? '?' + queryParams.toString() : '';
 
-  const { data, error, isLoading, mutate } = useSWR<Ticket[]>(
-    `/api/tickets${queryString}`,
+  const { data, error, isLoading, mutate } = useSWR<any>(
+    `/api/complaints${queryString}`,
     fetcher,
     {
       refreshInterval: 60000,
@@ -66,22 +75,23 @@ export function useTickets(params?: { status?: string; severity?: string; limit?
       }
     }
   );
-  return { tickets: data ?? [], isLoading, error, refresh: mutate };
+  
+  const mappedTickets = (data?.data || []).map((t: any) => ({
+    id: t.id,
+    ref: t.id.slice(-6).toUpperCase(),
+    category: t.category,
+    ward_id: 1,
+    severity: t.priority >= 3 ? 'Critical' : t.priority === 2 ? 'High' : t.priority === 1 ? 'Medium' : 'Low',
+    status: t.status.toLowerCase(),
+    created_at: t.createdAt
+  }));
+  
+  return { tickets: mappedTickets as Ticket[], isLoading, error, refresh: mutate };
 }
 
 // ── useActivity ───────────────────────────────────────────────────────────────
 export function useActivity() {
-  const { data, error, isLoading, mutate } = useSWR<ActivityItem[]>(
-    '/api/activity',
-    fetcher,
-    {
-      refreshInterval: 30000,
-      onError: (err) => {
-        toast.error(`Activity feed failed to load: ${err.message}`);
-      }
-    }
-  );
-  return { activity: data ?? [], isLoading, error, refresh: mutate };
+  return { activity: [] as ActivityItem[], isLoading: false, error: null, refresh: () => {} };
 }
 
 // ── useRealtimeSocket ─────────────────────────────────────────────────────────

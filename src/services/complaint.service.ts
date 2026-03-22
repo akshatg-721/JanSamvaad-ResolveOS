@@ -1,83 +1,264 @@
-import { complaintRepository } from '../repositories/complaint.repository';
-import { NotFoundError, ForbiddenError, ValidationError } from '../lib/error-handler';
-import { COMPLAINT_STATUS } from '../constants/complaint.constants';
-import { Role } from '../types';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { ComplaintStateMachine } from './complaint-state-machine';
+import { COMPLAINT_STATUS } from '@/constants/complaint.constants';
+import { Role } from '@/types';
+
+interface CreateComplaintInput {
+  title: string;
+  description: string;
+  category: string;
+  location: Prisma.InputJsonValue;
+  userId: string;
+  attachmentIds?: string[];
+}
+
+interface UpdateComplaintInput {
+  title?: string;
+  description?: string;
+  category?: string;
+  location?: Prisma.InputJsonValue;
+}
+
+interface ComplaintFilters {
+  status?: string;
+  category?: string;
+  userId?: string;
+  search?: string;
+}
 
 export class ComplaintService {
-  async createComplaint(userId: string, data: any) {
-    // Validate attachments if necessary
-    return complaintRepository.create({
-      ...data,
-      userId,
-      status: COMPLAINT_STATUS.PENDING
+  constructor(private db: PrismaClient = prisma) {}
+
+  async createComplaint(input: CreateComplaintInput) {
+    const complaint = await this.db.complaint.create({
+      data: {
+        title: input.title,
+        description: input.description,
+        category: input.category as any,
+        location: input.location ?? Prisma.JsonNull,
+        userId: input.userId,
+        status: 'PENDING',
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        attachments: true,
+        _count: { select: { upvotes: true } },
+      },
+    });
+
+    if (input.attachmentIds?.length) {
+      await this.db.attachment.updateMany({
+        where: { id: { in: input.attachmentIds } },
+        data: { complaintId: complaint.id },
+      });
+    }
+
+    return complaint;
+  }
+
+  async getComplaintById(id: string) {
+    const complaint = await this.db.complaint.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true } },
+        attachments: true,
+        statusHistory: {
+          include: { changedBy: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'desc' },
+        },
+        upvotes: true,
+        _count: { select: { upvotes: true } },
+      },
+    });
+
+    if (!complaint) throw new Error('Complaint not found');
+    return complaint;
+  }
+
+  async getComplaints(filters: ComplaintFilters = {}, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const where: Prisma.ComplaintWhereInput = {};
+
+    if (filters.status) where.status = filters.status as any;
+    if (filters.category) where.category = filters.category as any;
+    if (filters.userId) where.userId = filters.userId;
+    if (filters.search) {
+      where.OR = [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [complaints, total] = await Promise.all([
+      this.db.complaint.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          attachments: { select: { id: true, url: true, thumbnailUrl: true }, take: 1 },
+          _count: { select: { upvotes: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.db.complaint.count({ where }),
+    ]);
+
+    return {
+      data: complaints,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total,
+      },
+    };
+  }
+
+  async updateComplaint(id: string, userId: string, updates: UpdateComplaintInput) {
+    const complaint = await this.db.complaint.findUnique({
+      where: { id },
+      select: { userId: true, status: true },
+    });
+
+    if (!complaint) throw new Error('Complaint not found');
+    if (complaint.userId !== userId) throw new Error('Unauthorized');
+    if (complaint.status === 'CLOSED') throw new Error('Cannot edit closed complaint');
+
+    return this.db.complaint.update({
+      where: { id },
+      data: {
+        ...updates,
+        category: updates.category as any,
+        location: updates.location === undefined ? undefined : updates.location ?? Prisma.JsonNull,
+      },
+      include: { user: { select: { id: true, name: true } }, attachments: true, _count: { select: { upvotes: true } } },
     });
   }
 
-  async getComplaintById(id: string, userId?: string) {
-    const complaint = await complaintRepository.findById(id);
-    if (!complaint) throw new NotFoundError('Complaint not found');
+  async deleteComplaint(id: string, userId: string) {
+    const complaint = await this.db.complaint.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
 
-    let hasUpvoted = false;
-    if (userId) {
-      hasUpvoted = await complaintRepository.hasUserUpvoted(id, userId);
-    }
+    if (!complaint) throw new Error('Complaint not found');
+    if (complaint.userId !== userId) throw new Error('Unauthorized');
 
-    return { ...complaint, hasUpvoted };
+    return this.db.complaint.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
-  async getComplaints(filters: any, pagination: { page: number; limit: number }) {
-    return complaintRepository.findMany({ where: filters, orderBy: { createdAt: 'desc' } }, pagination);
-  }
+  async updateComplaintStatus(
+    id: string,
+    newStatus: COMPLAINT_STATUS,
+    changedById: string,
+    actorRole: Role,
+    comment?: string
+  ) {
+    const complaint = await this.db.complaint.findUnique({
+      where: { id },
+      select: { status: true, userId: true },
+    });
 
-  async getUserComplaints(userId: string, pagination: { page: number; limit: number }) {
-    return complaintRepository.findByUserId(userId, pagination);
-  }
+    if (!complaint) throw new Error('Complaint not found');
 
-  async updateComplaint(id: string, userId: string, data: any) {
-    const complaint = await complaintRepository.findById(id);
-    if (!complaint) throw new NotFoundError();
-    if (complaint.userId !== userId) throw new ForbiddenError('You can only edit your own complaints');
-    if (complaint.status === COMPLAINT_STATUS.CLOSED) throw new ValidationError('Cannot edit closed complaints');
+    const stateMachine = new ComplaintStateMachine(complaint.status as COMPLAINT_STATUS);
+    const isOwner = complaint.userId === changedById;
+    stateMachine.validateTransition(newStatus, actorRole, isOwner);
 
-    return complaintRepository.update(id, data);
-  }
+    const toResolved = newStatus === COMPLAINT_STATUS.RESOLVED;
+    const leavingResolved = complaint.status === COMPLAINT_STATUS.RESOLVED && newStatus !== COMPLAINT_STATUS.RESOLVED;
 
-  async updateComplaintStatus(id: string, adminId: string, adminRole: Role, status: COMPLAINT_STATUS, comment?: string) {
-    if (adminRole !== Role.ADMIN && adminRole !== Role.OFFICIAL) {
-      throw new ForbiddenError('Only admins and officials can change status');
-    }
+    return this.db.$transaction(async (tx) => {
+      const updated = await tx.complaint.update({
+        where: { id },
+        data: {
+          status: newStatus as any,
+          resolvedAt: toResolved ? new Date() : leavingResolved ? null : undefined,
+        },
+        include: { user: { select: { id: true, name: true, email: true } }, _count: { select: { upvotes: true } } },
+      });
 
-    const complaint = await complaintRepository.findById(id);
-    if (!complaint) throw new NotFoundError();
+      await tx.statusHistory.create({
+        data: {
+          complaintId: id,
+          fromStatus: complaint.status,
+          toStatus: newStatus as any,
+          changedById,
+          comment: comment || null,
+        },
+      });
 
-    // To implement: validate transition using ComplaintStateMachine
-    // Create StatusHistory entry
-
-    return complaintRepository.updateStatus(id, status, comment);
-  }
-
-  async deleteComplaint(id: string, userId: string, role: Role) {
-    const complaint = await complaintRepository.findById(id);
-    if (!complaint) throw new NotFoundError();
-
-    if (complaint.userId !== userId && role !== Role.ADMIN) {
-      throw new ForbiddenError();
-    }
-
-    return complaintRepository.delete(id);
+      return updated;
+    });
   }
 
   async toggleUpvote(complaintId: string, userId: string) {
-    const hasUpvoted = await complaintRepository.hasUserUpvoted(complaintId, userId);
-    
-    if (hasUpvoted) {
-      await complaintRepository.removeUpvote(complaintId, userId);
+    const complaint = await this.db.complaint.findUnique({
+      where: { id: complaintId },
+      select: { id: true },
+    });
+
+    if (!complaint) throw new Error('Complaint not found');
+
+    const existingUpvote = await this.db.upvote.findUnique({
+      where: { complaintId_userId: { complaintId, userId } },
+    });
+
+    if (existingUpvote) {
+      await this.db.upvote.delete({
+        where: { complaintId_userId: { complaintId, userId } },
+      });
     } else {
-      await complaintRepository.addUpvote(complaintId, userId);
+      await this.db.upvote.create({
+        data: { complaintId, userId },
+      });
     }
 
-    const newCount = await complaintRepository.getUpvoteCount(complaintId);
-    return { upvoted: !hasUpvoted, count: newCount };
+    const upvoteCount = await this.db.upvote.count({ where: { complaintId } });
+    return { upvoted: !existingUpvote, count: upvoteCount };
+  }
+
+  async getUpvoteCount(complaintId: string) {
+    return this.db.upvote.count({ where: { complaintId } });
+  }
+
+  async hasUserUpvoted(complaintId: string, userId: string) {
+    const upvote = await this.db.upvote.findUnique({
+      where: { complaintId_userId: { complaintId, userId } },
+    });
+    return !!upvote;
+  }
+
+  async getStatistics() {
+    const [total, byStatus, byCategory, recent] = await Promise.all([
+      this.db.complaint.count(),
+      this.db.complaint.groupBy({
+        by: ['status'],
+        _count: true,
+      }),
+      this.db.complaint.groupBy({
+        by: ['category'],
+        _count: true,
+      }),
+      this.db.complaint.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, title: true, status: true, createdAt: true },
+      }),
+    ]);
+
+    return {
+      total,
+      byStatus: byStatus.reduce((acc, item) => ({ ...acc, [item.status]: item._count }), {}),
+      byCategory: byCategory.reduce((acc, item) => ({ ...acc, [item.category]: item._count }), {}),
+      recentComplaints: recent,
+    };
   }
 }
 

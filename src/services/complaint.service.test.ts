@@ -1,39 +1,53 @@
-import { complaintService } from './complaint.service';
-import { complaintRepository } from '../repositories/complaint.repository';
-import { ComplaintStateMachine } from './complaint-state-machine';
+import { ComplaintService } from './complaint.service';
 import { Role } from '../types';
-
-// Mock dependencies
-jest.mock('../repositories/complaint.repository');
-jest.mock('./complaint-state-machine');
+import { COMPLAINT_STATUS } from '../constants/complaint.constants';
 
 describe('ComplaintService', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('updateComplaintStatus', () => {
     it('should throw an error if complaint is not found', async () => {
-      (complaintRepository.findById as jest.Mock).mockResolvedValue(null);
+      const dbMock: any = {
+        complaint: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+      };
+      const service = new ComplaintService(dbMock);
 
       await expect(
-        complaintService.updateComplaintStatus('invalid-id', 'admin-id', Role.ADMIN, 'RESOLVED' as any)
+        service.updateComplaintStatus('invalid-id', COMPLAINT_STATUS.RESOLVED, 'admin-id', Role.ADMIN)
       ).rejects.toThrow('Complaint not found');
     });
 
-    it('should successfully update status if state machine allows it', async () => {
-      const mockComplaint = { id: 'c1', status: 'IN_PROGRESS', userId: 'user-1' };
-      (complaintRepository.findById as jest.Mock).mockResolvedValue(mockComplaint);
-      
-      // Mock state machine transition validation to simply return the new state
-      (ComplaintStateMachine.prototype.transition as jest.Mock).mockReturnValue('RESOLVED');
-      
-      (complaintRepository.updateStatus as jest.Mock).mockResolvedValue({ ...mockComplaint, status: 'RESOLVED' });
+    it('should update status and write status history for valid transitions', async () => {
+      const txMock = {
+        complaint: {
+          update: jest.fn().mockResolvedValue({ id: 'c1', status: COMPLAINT_STATUS.RESOLVED }),
+        },
+        statusHistory: {
+          create: jest.fn().mockResolvedValue({ id: 'h1' }),
+        },
+      };
 
-      const result = await complaintService.updateComplaintStatus('c1', 'admin-id', Role.ADMIN, 'RESOLVED' as any);
-      
-      expect(result.status).toBe('RESOLVED');
-      expect(complaintRepository.updateStatus).toHaveBeenCalledWith('c1', 'RESOLVED');
+      const dbMock: any = {
+        complaint: {
+          findUnique: jest.fn().mockResolvedValue({
+            status: COMPLAINT_STATUS.IN_PROGRESS,
+            userId: 'user-1',
+          }),
+        },
+        $transaction: jest.fn().mockImplementation(async (callback: any) => callback(txMock)),
+      };
+
+      const service = new ComplaintService(dbMock);
+      const result = await service.updateComplaintStatus(
+        'c1',
+        COMPLAINT_STATUS.RESOLVED,
+        'admin-id',
+        Role.ADMIN
+      );
+
+      expect(result.status).toBe(COMPLAINT_STATUS.RESOLVED);
+      expect(txMock.complaint.update).toHaveBeenCalled();
+      expect(txMock.statusHistory.create).toHaveBeenCalled();
     });
   });
 });

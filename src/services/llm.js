@@ -1,7 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
 const logger = require('../utils/logger');
 
-const MODEL_NAME = 'gemini-2.5-flash';
+const MODEL_NAME = process.env.GEMINI_MODEL_NAME || process.env.GOOGLE_MODEL_NAME || 'gemini-2.5-flash';
 
 // JSON schema example embedded in prompt for consistent output
 const JSON_SCHEMA_EXAMPLE = `{
@@ -16,7 +16,10 @@ const JSON_SCHEMA_EXAMPLE = `{
 }`;
 
 async function transcribeAudio(recordingUrl) {
-  // Twilio transcription is handled via /transcribe callback
+  // Placeholder until transcription provider wiring is completed.
+  // Keep graceful behavior so voice pipelines do not crash.
+  if (!recordingUrl) return '';
+  logger.info({ recordingUrl }, 'Audio transcription requested but provider is not configured');
   return '';
 }
 
@@ -50,7 +53,7 @@ function parseJsonSafely(rawText) {
 
 async function extractIntent(transcript, translatedText = '') {
   if (!transcript || transcript.trim().length === 0) {
-    logger.warn('Empty transcript — skipping LLM extraction');
+    logger.warn('Empty transcript - skipping LLM extraction');
     return fallbackIntent(transcript);
   }
 
@@ -66,7 +69,7 @@ async function extractIntent(transcript, translatedText = '') {
 Analyze the citizen complaint below (often in Hinglish, Hindi, Tamil, or regional dialects) and extract structured information.
 
 RULES:
-1. Return ONLY valid JSON — no markdown, no explanation, no extra text.
+1. Return ONLY valid JSON - no markdown, no explanation, no extra text.
 2. "category" MUST be one of: water, road, electricity, sanitation, other
 3. "urgency" MUST be one of: Low, Medium, High, Critical
 4. "sentiment" MUST be one of: positive, neutral, negative
@@ -90,7 +93,10 @@ ${translatedText ? `English Translation:\n${translatedText}` : ''}`;
     const parsed = parseJsonSafely(rawText);
 
     if (!parsed) {
-      logger.warn({ rawText: rawText.slice(0, 200) }, 'LLM returned unparseable JSON — using fallback intent');
+      logger.warn(
+        { rawText: rawText.slice(0, 200), model: MODEL_NAME },
+        'LLM returned unparseable JSON - using fallback intent'
+      );
       return fallbackIntent(transcript);
     }
 
@@ -106,7 +112,10 @@ ${translatedText ? `English Translation:\n${translatedText}` : ''}`;
       sentiment: validSentiments.includes(parsed.sentiment) ? parsed.sentiment : 'neutral'
     };
   } catch (error) {
-    logger.error({ err: error, transcript: transcript.slice(0, 100) }, 'Gemini extraction failed. Using fallback intent.');
+    logger.error(
+      { err: error, model: MODEL_NAME, transcript: transcript.slice(0, 100) },
+      'LLM extraction failed. Using fallback intent.'
+    );
     return fallbackIntent(transcript);
   }
 }

@@ -1,41 +1,47 @@
+import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import type { NextRequest } from 'next/server';
 
-export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-dev' });
-  const { pathname } = req.nextUrl;
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
 
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
-  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
-
-  // If going to login/register while authenticated, redirect to dashboard
-  if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
-
-  // If going to dashboard without authentication, redirect to login
-  if (isDashboardRoute && !token) {
-    let from = req.nextUrl.pathname;
-    if (req.nextUrl.search) {
-      from += req.nextUrl.search;
+    if (path.startsWith('/admin') && token?.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/demo', req.url));
     }
-    return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(from)}`, req.url));
-  }
 
-  // Role based protection (e.g. /admin routes only for ADMIN role)
-  if (pathname.startsWith('/admin') && token?.role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
+    if (path.startsWith('/official') && !['ADMIN', 'OFFICIAL'].includes(token?.role as string)) {
+      return NextResponse.redirect(new URL('/demo', req.url));
+    }
 
-  return NextResponse.next();
-}
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        const path = req.nextUrl.pathname;
+
+        if (
+          path === '/' ||
+          path === '/login' ||
+          path === '/register' ||
+          path.startsWith('/api/auth')
+        ) {
+          return true;
+        }
+
+        return !!token;
+      },
+    },
+  }
+);
 
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/demo/:path*',
     '/admin/:path*',
-    '/login',
-    '/register'
+    '/official/:path*',
+    '/profile/:path*',
   ]
 };

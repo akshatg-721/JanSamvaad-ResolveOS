@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { ComplaintCard } from './ComplaintCard';
 import { COMPLAINT_STATUS, COMPLAINT_CATEGORY } from '@/constants/complaint.constants';
 
@@ -10,17 +10,10 @@ describe('ComplaintCard Component', () => {
     description: 'Huge water leak near the metro pillar.',
     category: COMPLAINT_CATEGORY.WATER,
     status: COMPLAINT_STATUS.PENDING,
-    severity: 'HIGH' as any,
-    address: 'Sector 4, Rohini',
-    city: 'Delhi',
-    state: 'Delhi',
-    pincode: '110085',
-    lat: null,
-    lng: null,
+    location: { address: 'Sector 4, Rohini', city: 'Delhi', state: 'Delhi', pincode: '110085' } as any,
+    priority: 2,
     userId: 'user-1',
     assignedToId: null,
-    tokens: null,
-    slaDeadline: null,
     resolvedAt: null,
     deletedAt: null,
     createdAt: new Date('2026-01-01T10:00:00Z'),
@@ -29,26 +22,26 @@ describe('ComplaintCard Component', () => {
   };
 
   it('renders complaint title and description correctly', () => {
-    render(<ComplaintCard complaint={mockComplaint} />);
+    const { getByText } = render(<ComplaintCard complaint={mockComplaint as any} />);
     
-    expect(screen.getByText('Water Leakage in Main Pipe')).toBeInTheDocument();
-    expect(screen.getByText('Huge water leak near the metro pillar.')).toBeInTheDocument();
+    expect(getByText('Water Leakage in Main Pipe')).toBeInTheDocument();
+    expect(getByText('Huge water leak near the metro pillar.')).toBeInTheDocument();
   });
 
   it('renders the correct badges', () => {
-    render(<ComplaintCard complaint={mockComplaint} />);
+    const { getByText } = render(<ComplaintCard complaint={mockComplaint as any} />);
     
     // Status Badge
-    expect(screen.getByText('Pending')).toBeInTheDocument();
+    expect(getByText('Pending')).toBeInTheDocument();
     
     // Priority Badge
-    expect(screen.getByText('HIGH Priority')).toBeInTheDocument();
+    expect(getByText('HIGH Priority')).toBeInTheDocument();
   });
 
   it('renders upvotes and comments count', () => {
-    render(<ComplaintCard complaint={mockComplaint} />);
+    const { getByText } = render(<ComplaintCard complaint={mockComplaint as any} />);
     
-    expect(screen.getByText('5')).toBeInTheDocument(); // comments
-    expect(screen.getByText('12')).toBeInTheDocument(); // upvotes
+    expect(getByText('5')).toBeInTheDocument(); // comments
+    expect(getByText('12')).toBeInTheDocument(); // upvotes
   });
 });

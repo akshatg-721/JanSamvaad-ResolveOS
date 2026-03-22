@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VALIDATION_LIMITS } from '../constants/validation.constants';
+import { VALIDATION_LIMITS } from '@/constants/validation.constants';
 
 export const registerSchema = z.object({
   email: z.string()

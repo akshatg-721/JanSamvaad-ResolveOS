@@ -12,7 +12,7 @@ export class UserRepository extends BaseRepository<User, any, any> {
   }
 
   async updatePassword(id: string, passwordHash: string): Promise<User> {
-    return this.update(id, { passwordHash } as any);
+    return this.update(id, { password: passwordHash } as any);
   }
 }
 

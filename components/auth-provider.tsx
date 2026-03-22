@@ -88,13 +88,17 @@ function AuthInterceptor({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+import { SessionProvider } from 'next-auth/react';
+
 // ── AuthProvider (exported) ───────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <GlobalErrorBoundary>
-      <AuthInterceptor>
-        {children}
-      </AuthInterceptor>
-    </GlobalErrorBoundary>
+    <SessionProvider>
+      <GlobalErrorBoundary>
+        <AuthInterceptor>
+          {children}
+        </AuthInterceptor>
+      </GlobalErrorBoundary>
+    </SessionProvider>
   );
 }

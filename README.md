@@ -1,27 +1,81 @@
-# JanSamvaad ResolveOS
+# JanSamvaad - ResolveOS
 
-ResolveOS is a unified, production-grade Next.js 14 civic grievance management platform. It streamlines the reporting, assignment, and resolution of systemic municipal issues (e.g., potholes, water leakage) utilizing a robust Role-Based Access Control (RBAC) architecture and geospatial clustering.
+## Overview
+JanSamvaad ResolveOS is a civic complaint management platform that connects citizens, officials, and administrators in one workflow. Citizens can file issues with evidence, track progress, and upvote community problems while authorities manage resolution with role-based controls.
 
-## 🏗 Architecture Overview
-The platform has undergone a massive architectural migration from a legacy split-stack (Express + Next.js) into a unified Fullstack Next.js App Router ecosystem:
+## Features
+- User registration and secure authentication
+- Complaint creation with optional image uploads
+- Status tracking across full complaint lifecycle
+- Upvote support for community prioritization
+- Admin dashboard for monitoring and management
+- Role-based access control (USER / OFFICIAL / ADMIN)
 
-### Tech Stack
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Database:** PostgreSQL accessed via **Prisma ORM**
-- **Authentication:** NextAuth.js (Custom Credentials + JWT)
-- **UI Components:** Shadcn UI + Tailwind CSS
-- **Forms & Validation:** React Hook Form + Zod
+## Tech Stack
+- Next.js 14+ (App Router)
+- Prisma + PostgreSQL
+- NextAuth.js (Credentials/JWT)
+- Cloudinary for media storage
+- Tailwind CSS + shadcn/ui
+- Zod + TypeScript
 
-### Core Features
-- 🔐 **Strict RBAC:** Segregated access for `USER`, `OFFICIAL`, and `ADMIN`.
-- 🛤 **State Machine Enforcement:** Complaints transition through a rigorous lifecycle (`PENDING` -> `ACKNOWLEDGED` -> `IN_PROGRESS` -> `RESOLVED`) controlled by permissions.
-- 📍 **Geospatial Processing:** Built-in Lat/Lng mappings for map integrations.
-- 🛡 **Enterprise Security:** API routes hardened with sliding-limit Rate Limiting, DOMPurify/XSS sanitization, and strict CSP Headers.
-- 📱 **Mobile Responsive Dashboards:** Clean Component-based UI patterns.
+## Getting Started
 
-## 🚀 Quick Start
-Please see [SETUP.md](./SETUP.md) for detailed local development and environment configurations.
+### Prerequisites
+- Node.js 18+
+- PostgreSQL
+- Cloudinary account (optional for local dev, recommended for production)
 
-## 📖 API Documentation
-Please see [API.md](./API.md) for endpoint contracts, authentication mechanisms, and request/response payloads.
+### Installation
+1. Clone the repository
+2. Install dependencies:
+   `npm install`
+3. Copy env template:
+   `cp .env.example .env`
+4. Update environment values in `.env`
+5. Run database migrations:
+   `npx prisma migrate dev`
+6. Generate Prisma client:
+   `npx prisma generate`
+7. Seed sample data:
+   `npx prisma db seed`
+8. Start development server:
+   `npm run next-dev`
+
+### Default Accounts
+- Admin: `admin@jansamvaad.gov.in` / `Admin@123456`
+- Official: `official@jansamvaad.gov.in` / `Official@123456`
+- User: `rahul@example.com` / `User@123456`
+
+## Project Structure
+```text
+app/                        # Next.js app routes used by runtime
+src/
+  app/                      # Extended app routes/pages for modular features
+  components/               # Shared UI and feature components
+  lib/                      # Auth, constants, utilities
+  services/                 # Domain services
+  repositories/             # Data access logic
+  types/                    # Type augmentations and shared types
+prisma/
+  schema.prisma             # DB schema
+  seed.ts                   # Idempotent seed data
+```
+
+## API Endpoints
+- `POST /api/auth/register` - Register user
+- `GET/POST /api/auth/[...nextauth]` - Auth handlers
+- `GET /api/dashboard/stats` - Dashboard statistics
+- `GET /api/complaints` - List complaints
+- `POST /api/complaints` - Create complaint
+- `GET/PATCH/DELETE /api/complaints/:id` - Complaint detail/update/delete
+- `PATCH /api/complaints/:id/status` - Update complaint status
+- `POST /api/complaints/:id/upvote` - Toggle upvote
+- `POST /api/upload` - Upload files
+- `DELETE /api/upload/:id` - Delete uploaded file
+- `GET/PATCH /api/users/me` - Current user profile
+- `PATCH /api/users/me/password` - Change password
+- `GET /api/admin/users` - Admin-only user list
+
+## License
+MIT

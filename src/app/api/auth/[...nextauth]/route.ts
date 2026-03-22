@@ -1,4 +1,5 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
+import NextAuth from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
@@ -17,7 +18,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+          where: { email: credentials.email.toLowerCase().trim() },
         });
 
         if (!user) {
@@ -57,33 +58,31 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-          phone: user.phone || undefined,
+          phone: user.phone,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, session: sessionUpdate }) {
       if (user) {
         token.id = user.id;
-        token.email = user.email;
-        token.name = user.name;
+        token.email = user.email as string;
+        token.name = user.name as string;
         token.role = (user as any).role;
-        token.phone = (user as any).phone;
       }
-      if (trigger === 'update' && session) {
-        token.name = (session as any).name || token.name;
+      if (trigger === 'update' && sessionUpdate) {
+        if (sessionUpdate.name) token.name = sessionUpdate.name;
       }
       return token;
     },
     async session({ session, token }) {
-      session.user = {
-        id: token.id as string,
-        email: token.email as string,
-        name: token.name as string,
-        role: token.role as string,
-        phone: (token as any).phone as string | undefined,
-      };
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+      }
       return session;
     },
   },

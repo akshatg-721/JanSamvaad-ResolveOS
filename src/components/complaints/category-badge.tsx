@@ -1,20 +1,19 @@
 import { Badge } from '@/components/ui/badge';
-import { CATEGORY_LABELS } from '@/lib/constants';
+import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
-const CATEGORY_COLORS: Record<string, string> = {
-  ROADS: 'bg-slate-100 text-slate-700',
-  WATER: 'bg-blue-100 text-blue-700',
-  ELECTRICITY: 'bg-yellow-100 text-yellow-700',
-  SANITATION: 'bg-emerald-100 text-emerald-700',
-  PUBLIC_SAFETY: 'bg-red-100 text-red-700',
-  TRANSPORTATION: 'bg-indigo-100 text-indigo-700',
-  OTHER: 'bg-gray-100 text-gray-700',
-};
+interface CategoryBadgeProps {
+  category: string;
+  className?: string;
+}
 
-export function CategoryBadge({ category }: { category: string }) {
+export function CategoryBadge({ category, className }: CategoryBadgeProps) {
+  const label = CATEGORY_LABELS[category] || category;
+  const colorClass = CATEGORY_COLORS[category] || 'bg-gray-100 text-gray-800';
+
   return (
-    <Badge className={CATEGORY_COLORS[category] || CATEGORY_COLORS.OTHER}>
-      {CATEGORY_LABELS[category] || category}
+    <Badge variant="outline" className={cn(colorClass, 'font-medium', className)}>
+      {label}
     </Badge>
   );
 }

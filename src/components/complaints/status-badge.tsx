@@ -1,8 +1,19 @@
 import { Badge } from '@/components/ui/badge';
-import { STATUS_COLORS, STATUS_LABELS } from '@/lib/constants';
+import { STATUS_LABELS, STATUS_COLORS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
-export function StatusBadge({ status }: { status: string }) {
+interface StatusBadgeProps {
+  status: string;
+  className?: string;
+}
+
+export function StatusBadge({ status, className }: StatusBadgeProps) {
   const label = STATUS_LABELS[status] || status;
-  const color = STATUS_COLORS[status] || 'bg-gray-100 text-gray-800';
-  return <Badge className={color}>{label}</Badge>;
+  const colorClass = STATUS_COLORS[status] || 'bg-gray-100 text-gray-800';
+
+  return (
+    <Badge variant="outline" className={cn(colorClass, 'font-medium', className)}>
+      {label}
+    </Badge>
+  );
 }

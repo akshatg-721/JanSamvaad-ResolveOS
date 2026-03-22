@@ -1,55 +1,25 @@
 import { NextResponse } from 'next/server';
 
-export interface ApiError {
-  message: string;
-  code: string;
-  statusCode: number;
+export function successResponse<T>(data: T, message: string = 'Success', status: number = 200) {
+  return NextResponse.json({ success: true, data, message }, { status });
 }
 
-export function successResponse<T>(
-  data: T,
-  message: string = 'Success',
-  statusCode: number = 200
-) {
-  return NextResponse.json(
-    { success: true, data, message },
-    { status: statusCode }
-  );
+export function errorResponse(message: string, code: string = 'INTERNAL_ERROR', status: number = 500) {
+  return NextResponse.json({ success: false, error: message, code }, { status });
 }
 
-export function errorResponse(
-  message: string,
-  code: string = 'INTERNAL_ERROR',
-  statusCode: number = 500
-) {
-  return NextResponse.json(
-    { success: false, error: message, code },
-    { status: statusCode }
-  );
-}
-
-export function paginatedResponse<T>(
-  data: T[],
-  page: number,
-  limit: number,
-  total: number,
-  statusCode: number = 200
-) {
-  const totalPages = Math.ceil(total / limit);
-  return NextResponse.json(
-    {
-      success: true,
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasMore: page < totalPages,
-      },
+export function paginatedResponse<T>(data: T[], page: number, limit: number, total: number) {
+  return NextResponse.json({
+    success: true,
+    data,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasMore: page * limit < total,
     },
-    { status: statusCode }
-  );
+  });
 }
 
 export function notFoundResponse(resource: string = 'Resource') {
@@ -66,10 +36,4 @@ export function forbiddenResponse(message: string = 'Forbidden') {
 
 export function validationErrorResponse(message: string) {
   return errorResponse(message, 'VALIDATION_ERROR', 400);
-}
-
-export function rateLimitResponse(retryAfter: number = 60) {
-  const response = errorResponse('Too many requests', 'RATE_LIMITED', 429);
-  response.headers.set('Retry-After', retryAfter.toString());
-  return response;
 }

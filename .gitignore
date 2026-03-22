@@ -8,6 +8,10 @@ node_modules/
 .next/
 _archive/
 dashboard/
+!components/dashboard/
+!components/dashboard/**
+!src/components/dashboard/
+!src/components/dashboard/**
 dist/
 coverage/
 

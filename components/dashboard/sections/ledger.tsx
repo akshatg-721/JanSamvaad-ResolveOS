@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,37 +11,25 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, Download, ExternalLink, Hash, QrCode, X, Loader2, Plus } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-
-type Ticket = {
-  id: number;
-  ref: string;
-  category: string;
-  ward_id: number;
-  severity: string;
-  status: string;
-  created_at: string;
-  phone: string;
-  evidence_url?: string;
-};
+import { createTicket, generateTicketQr, getTickets } from "@/lib/api/dashboard";
+import type { TicketLedgerDTO } from "@/lib/contracts/dashboard";
 
 export function LedgerSection() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [tickets, setTickets] = useState<TicketLedgerDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generatingQR, setGeneratingQR] = useState<number | null>(null);
-  
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [generatingQR, setGeneratingQR] = useState<string | null>(null);
+
+  const [selectedTicket, setSelectedTicket] = useState<TicketLedgerDTO | null>(null);
   const [qrToken, setQrToken] = useState<string | null>(null);
-  
-  // Manual Ticket State
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newTicket, setNewTicket] = useState({
     phone: "",
     category: "General",
     ward_id: "1",
-    severity: "Medium"
+    severity: "Medium",
   });
 
   useEffect(() => {
@@ -50,7 +38,7 @@ export function LedgerSection() {
 
   const fetchTickets = async () => {
     try {
-      const data = await apiFetch<Ticket[]>('/api/tickets');
+      const data = await getTickets();
       setTickets(data);
     } catch (err) {
       console.error("Failed to fetch tickets", err);
@@ -59,12 +47,10 @@ export function LedgerSection() {
     }
   };
 
-  const handleGenerateQR = async (ticket: Ticket) => {
+  const handleGenerateQR = async (ticket: TicketLedgerDTO) => {
     setGeneratingQR(ticket.id);
     try {
-      const data = await apiFetch<{token: string}>(`/api/tickets/${ticket.id}/generate-qr`, {
-        method: 'POST'
-      });
+      const data = await generateTicketQr(ticket.id);
       setSelectedTicket(ticket);
       setQrToken(data.token);
     } catch (err) {
@@ -78,21 +64,18 @@ export function LedgerSection() {
   const closeQRModal = () => {
     setSelectedTicket(null);
     setQrToken(null);
-    fetchTickets(); // Refresh tickets in case it was resolved
+    fetchTickets();
   };
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAdding(true);
     try {
-      await apiFetch('/api/tickets', {
-        method: 'POST',
-        body: JSON.stringify({
-          phone: newTicket.phone,
-          category: newTicket.category,
-          ward_id: parseInt(newTicket.ward_id),
-          severity: newTicket.severity
-        })
+      await createTicket({
+        phone: newTicket.phone,
+        category: newTicket.category,
+        ward_id: parseInt(newTicket.ward_id, 10),
+        severity: newTicket.severity,
       });
       setIsAddOpen(false);
       setNewTicket({ phone: "", category: "General", ward_id: "1", severity: "Medium" });
@@ -138,17 +121,17 @@ export function LedgerSection() {
               <form onSubmit={handleCreateTicket} className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Citizen Phone matching</Label>
-                  <Input 
-                    id="phone" 
-                    placeholder="+919876543210" 
+                  <Input
+                    id="phone"
+                    placeholder="+919876543210"
                     value={newTicket.phone}
-                    onChange={(e) => setNewTicket({...newTicket, phone: e.target.value})}
+                    onChange={(e) => setNewTicket({ ...newTicket, phone: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Select value={newTicket.category} onValueChange={(val) => setNewTicket({...newTicket, category: val})}>
+                  <Select value={newTicket.category} onValueChange={(val) => setNewTicket({ ...newTicket, category: val })}>
                     <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Sanitation">Sanitation</SelectItem>
@@ -162,7 +145,7 @@ export function LedgerSection() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="ward">Ward</Label>
-                    <Select value={newTicket.ward_id} onValueChange={(val) => setNewTicket({...newTicket, ward_id: val})}>
+                    <Select value={newTicket.ward_id} onValueChange={(val) => setNewTicket({ ...newTicket, ward_id: val })}>
                       <SelectTrigger><SelectValue placeholder="Ward" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="1">Ward 1</SelectItem>
@@ -175,7 +158,7 @@ export function LedgerSection() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="severity">Severity</Label>
-                    <Select value={newTicket.severity} onValueChange={(val) => setNewTicket({...newTicket, severity: val})}>
+                    <Select value={newTicket.severity} onValueChange={(val) => setNewTicket({ ...newTicket, severity: val })}>
                       <SelectTrigger><SelectValue placeholder="Severity" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Low">Low</SelectItem>
@@ -235,78 +218,81 @@ export function LedgerSection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tickets.map((ticket, index) => (
-                  <TableRow 
-                    key={ticket.id} 
-                    className={cn(
-                      "border-border transition-colors group",
-                      index % 2 === 0 ? "bg-secondary/10" : "bg-transparent",
-                      "hover:bg-accent/10"
-                    )}
-                  >
-                    <TableCell className="font-mono text-[11px] font-black text-blue-400 uppercase tracking-tighter">{ticket.ref}</TableCell>
-                    <TableCell className="font-bold text-slate-200">{ticket.category}</TableCell>
-                    <TableCell className="text-slate-500 font-medium text-xs">{ticket.ward_id ? `Ward ${ticket.ward_id}` : 'Unassigned'}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className={cn(
-                        "rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest",
-                        ticket.severity === "Critical" ? "bg-red-500/10 text-red-400 border-red-500/20" :
-                        ticket.severity === "High" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
-                        "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                      )}>
-                        {ticket.severity}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        <div className={cn(
-                          "w-2 h-2 rounded-full ",
-                          (ticket.status === "closed" || ticket.status === "resolved") ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : 
-                          ticket.status === "open" ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]" : 
-                          "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]"
-                        )} />
-                        {ticket.status}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">{new Date(ticket.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {ticket.status === 'open' && (
-                          <Button 
-                            onClick={() => handleGenerateQR(ticket)}
-                            size="sm" 
-                            variant="outline"
-                            disabled={generatingQR === ticket.id}
-                            className="h-8 px-3 rounded-full border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
-                          >
-                            {generatingQR === ticket.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <QrCode className="w-3.5 h-3.5" />}
-                            Resolve
+                {tickets.map((ticket, index) => {
+                  const normalizedStatus = ticket.status.toLowerCase();
+                  return (
+                    <TableRow
+                      key={ticket.id}
+                      className={cn(
+                        "border-border transition-colors group",
+                        index % 2 === 0 ? "bg-secondary/10" : "bg-transparent",
+                        "hover:bg-accent/10"
+                      )}
+                    >
+                      <TableCell className="font-mono text-[11px] font-black text-blue-400 uppercase tracking-tighter">{ticket.ref}</TableCell>
+                      <TableCell className="font-bold text-slate-200">{ticket.category}</TableCell>
+                      <TableCell className="text-slate-500 font-medium text-xs">{ticket.wardId ? `Ward ${ticket.wardId}` : 'Unassigned'}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className={cn(
+                          "rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest",
+                          ticket.severity === "Critical" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                          ticket.severity === "High" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
+                          "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                        )}>
+                          {ticket.severity}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full ",
+                            (normalizedStatus === "closed" || normalizedStatus === "resolved") ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" :
+                            normalizedStatus === "open" ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]" :
+                            "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+                          )} />
+                          {ticket.status}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">{new Date(ticket.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {normalizedStatus === 'open' && (
+                            <Button
+                              onClick={() => handleGenerateQR(ticket)}
+                              size="sm"
+                              variant="outline"
+                              disabled={generatingQR === ticket.id}
+                              className="h-8 px-3 rounded-full border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+                            >
+                              {generatingQR === ticket.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <QrCode className="w-3.5 h-3.5" />}
+                              Resolve
+                            </Button>
+                          )}
+                          {ticket.evidenceUrl && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-blue-400 hover:text-white hover:bg-blue-500/20"
+                              onClick={() => window.open(ticket.evidenceUrl || '', '_blank')}
+                            >
+                              <Search className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/5 transition-colors">
+                            <ExternalLink className="w-4 h-4" />
                           </Button>
-                        )}
-                        {ticket.evidence_url && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-blue-400 hover:text-white hover:bg-blue-500/20"
-                            onClick={() => window.open(ticket.evidence_url, '_blank')}
-                          >
-                            <Search className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/5 transition-colors">
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                
-                {tickets.length === 0 && !loading && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                        No active tickets found.
+                        </div>
                       </TableCell>
                     </TableRow>
+                  );
+                })}
+
+                {tickets.length === 0 && !loading && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                      No active tickets found.
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -314,15 +300,13 @@ export function LedgerSection() {
         </CardContent>
       </Card>
 
-      {/* Modern Glassmorphism QR Rating Modal */}
       {qrToken && selectedTicket && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="relative w-full max-w-md bg-background/95 border border-white/10 p-8 rounded-[2rem] shadow-2xl overflow-hidden">
-            {/* Decorative glares */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-accent/20 blur-[50px] rounded-full pointer-events-none" />
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-500/20 blur-[50px] rounded-full pointer-events-none" />
-            
-            <button 
+
+            <button
               onClick={closeQRModal}
               className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors z-10"
             >
@@ -333,14 +317,14 @@ export function LedgerSection() {
               <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
                 <QrCode className="w-8 h-8 text-accent" />
               </div>
-              
+
               <h3 className="text-2xl font-bold text-white mb-2 text-center">Authenticate Resolution</h3>
               <p className="text-white/60 text-center mb-8 text-sm px-4">
                 Ask the citizen who reported <strong className="text-white">{selectedTicket.ref}</strong> to scan this QR code to provide feedback and securely close this ticket.
               </p>
 
               <div className="bg-white p-4 rounded-3xl shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-transform hover:scale-105 duration-300">
-                <QRCodeSVG 
+                <QRCodeSVG
                   value={`${typeof window !== 'undefined' ? window.location.origin : ''}/resolve/${selectedTicket.id}?token=${qrToken}`}
                   size={200}
                   level="H"
@@ -351,8 +335,8 @@ export function LedgerSection() {
               </div>
 
               <div className="mt-8 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-accent/80">
-                 <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
-                 Waiting for citizen to scan...
+                <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
+                Waiting for citizen to scan...
               </div>
             </div>
           </div>
@@ -361,3 +345,4 @@ export function LedgerSection() {
     </div>
   );
 }
+

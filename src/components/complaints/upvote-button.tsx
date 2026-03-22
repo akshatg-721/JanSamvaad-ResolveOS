@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useSession } from 'next-auth/react';
+import { requireFrontendAuth } from '@/lib/auth/client';
+import { toggleUpvote } from '@/lib/api/complaints';
 
 interface UpvoteButtonProps {
   complaintId: string;
@@ -15,31 +16,22 @@ interface UpvoteButtonProps {
 }
 
 export function UpvoteButton({ complaintId, initialCount, initialUpvoted }: UpvoteButtonProps) {
-  const { data: session } = useSession();
   const [count, setCount] = useState(initialCount);
   const [upvoted, setUpvoted] = useState(initialUpvoted);
   const [loading, setLoading] = useState(false);
 
   const handleUpvote = async () => {
-    if (!session) {
+    if (!requireFrontendAuth()) {
       toast.error('Please login to upvote');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/complaints/${complaintId}/upvote`, {
-        method: 'POST',
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        setUpvoted(result.data.upvoted);
-        setCount(result.data.count);
-        toast.success(result.data.upvoted ? 'Upvoted!' : 'Removed upvote');
-      } else {
-        toast.error(result.error || 'Failed');
-      }
+      const result = await toggleUpvote(complaintId);
+      setUpvoted(result.upvoted);
+      setCount(result.count);
+      toast.success(result.upvoted ? 'Upvoted!' : 'Removed upvote');
     } catch (_error) {
       toast.error('Failed to upvote');
     } finally {
@@ -69,3 +61,4 @@ export function UpvoteButton({ complaintId, initialCount, initialUpvoted }: Upvo
     </Button>
   );
 }
+

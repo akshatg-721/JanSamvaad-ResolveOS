@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { uploadFiles as uploadAssets } from '@/lib/api/upload';
 
 interface UploadedFile {
   id: string;
@@ -56,7 +57,7 @@ export function FileUploader({
     setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async () => {
+  const handleUpload = async () => {
     if (pendingFiles.length === 0) return;
 
     setUploading(true);
@@ -66,19 +67,14 @@ export function FileUploader({
       const formData = new FormData();
       pendingFiles.forEach((file) => formData.append('files', file));
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const uploaded = await uploadAssets(formData);
 
-      setProgress(80);
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      onUploadComplete(result.data);
+      onUploadComplete(uploaded.map((asset) => ({
+        id: asset.id,
+        filename: asset.filename || 'upload',
+        url: asset.url,
+        thumbnailUrl: asset.thumbnailUrl || asset.url,
+      })));
       setPendingFiles([]);
       setProgress(100);
       toast.success('Files uploaded successfully');
@@ -163,7 +159,7 @@ export function FileUploader({
             ))}
           </div>
           <Button
-            onClick={uploadFiles}
+            onClick={handleUpload}
             disabled={uploading}
             className="w-full"
             type="button"
@@ -189,3 +185,4 @@ export function FileUploader({
     </div>
   );
 }
+

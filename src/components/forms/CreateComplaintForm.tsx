@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { COMPLAINT_CATEGORY } from '@/constants/complaint.constants';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
+import { createComplaint } from '@/lib/api/complaints';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Paperclip } from 'lucide-react';
 
@@ -44,13 +45,7 @@ export function CreateComplaintForm({ onSuccess }: { onSuccess?: () => void }) {
   async function onSubmit(data: ComplaintFormValues) {
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/complaints', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      
-      if (!res.ok) throw new Error('Failed to submit complaint');
+      await createComplaint(data as any);
       
       toast({
         title: "Complaint Registered",
@@ -167,3 +162,5 @@ export function CreateComplaintForm({ onSuccess }: { onSuccess?: () => void }) {
     </Form>
   );
 }
+
+

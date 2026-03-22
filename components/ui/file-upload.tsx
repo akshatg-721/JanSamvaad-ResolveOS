@@ -1,11 +1,12 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { uploadSingleFile } from '@/lib/api/upload';
 
 interface FileUploadProps {
   onUploadComplete: (attachmentId: string) => void;
@@ -19,29 +20,20 @@ export function FileUpload({ onUploadComplete, maxFiles = 5, className }: FileUp
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
-    
+
     setUploading(true);
     setProgress(0);
 
     for (const file of acceptedFiles) {
-      const formData = new FormData();
-      formData.append('file', file);
-
       try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          onUploadComplete(result.data.id);
+        const uploaded = await uploadSingleFile(file);
+        if (uploaded?.id) {
+          onUploadComplete(uploaded.id);
           toast.success(`Uploaded ${file.name}`);
         } else {
-          toast.error(result.error || `Failed to upload ${file.name}`);
+          toast.error(`Failed to upload ${file.name}`);
         }
-      } catch (error) {
+      } catch {
         toast.error(`Network error uploading ${file.name}`);
       }
     }
@@ -59,23 +51,23 @@ export function FileUpload({ onUploadComplete, maxFiles = 5, className }: FileUp
   });
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       <div
         {...getRootProps()}
         className={cn(
-          "relative border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center justify-center text-center",
-          isDragActive ? "border-accent bg-accent/5" : "border-white/10 bg-white/5 hover:bg-white/10",
-          uploading && "opacity-50 pointer-events-none"
+          'relative border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center justify-center text-center',
+          isDragActive ? 'border-accent bg-accent/5' : 'border-white/10 bg-white/5 hover:bg-white/10',
+          uploading && 'opacity-50 pointer-events-none'
         )}
       >
         <input {...getInputProps()} />
-        
+
         <div className="bg-accent/10 p-4 rounded-full mb-4">
           <Upload className="w-8 h-8 text-accent" />
         </div>
-        
+
         <p className="text-white font-medium mb-1">
-          {isDragActive ? "Drop files here" : "Click or drag files to upload"}
+          {isDragActive ? 'Drop files here' : 'Click or drag files to upload'}
         </p>
         <p className="text-white/40 text-xs uppercase tracking-widest font-bold">
           Images up to 5MB (Max {maxFiles})
@@ -92,3 +84,4 @@ export function FileUpload({ onUploadComplete, maxFiles = 5, className }: FileUp
     </div>
   );
 }
+

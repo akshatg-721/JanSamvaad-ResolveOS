@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, CheckCircle2, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
+import { submitTicketResolutionFeedback } from "@/lib/api/complaints";
 
 export default function ResolvePage() {
   const { id } = useParams();
@@ -22,9 +22,10 @@ export default function ResolvePage() {
     if (rating === 0) return;
     setSubmitting(true);
     try {
-      await apiFetch(`/api/tickets/${id}/resolve`, {
-        method: 'POST',
-        body: JSON.stringify({ token, rating, text: feedback })
+      await submitTicketResolutionFeedback(String(id), {
+        token,
+        rating,
+        text: feedback,
       });
       setResolved(true);
     } catch (err) {
@@ -172,3 +173,4 @@ export default function ResolvePage() {
     </div>
   );
 }
+

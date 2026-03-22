@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/sidebar";
@@ -13,23 +13,26 @@ import { ActivitySection } from "@/components/dashboard/sections/activity";
 import { AnalyticsSection } from "@/components/dashboard/sections/analytics";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import type { Section } from "@/lib/types";
+import { requireFrontendAuth } from "@/lib/auth/client";
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState<Section>("overview");
-  const { data: session, status } = useSession();
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    const authorized = requireFrontendAuth();
+    if (!authorized) {
       router.push("/login");
+      return;
     }
-  }, [status, router]);
+    setIsAuthorized(true);
+  }, [router]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  if (status === "loading" || status === "unauthenticated") return <div className="min-h-screen bg-[#060b1d]" />;
+  if (!isAuthorized) return <div className="min-h-screen bg-[#060b1d]" />;
 
   const renderSection = () => {
     switch (activeSection) {
@@ -81,3 +84,4 @@ export default function Dashboard() {
     </>
   );
 }
+

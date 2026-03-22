@@ -1,22 +1,31 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart3, TrendingUp, PieChart, Info, ShieldAlert, Clock, CheckCircle2 } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-  PieChart as RePie, Pie, LineChart, Line
+import { TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart as RePie,
+  Pie,
 } from 'recharts';
+import { getDashboardAnalytics } from "@/lib/api/dashboard";
+import type { DashboardAnalyticsDTO } from "@/lib/contracts/dashboard";
 
 export function AnalyticsSection() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardAnalyticsDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await apiFetch<any>("/api/analytics");
+        const res = await getDashboardAnalytics();
         setData(res);
       } catch (err) {
         console.error("Analytics fetch failed:", err);
@@ -31,7 +40,7 @@ export function AnalyticsSection() {
   if (!data) return <div className="h-96 flex items-center justify-center text-red-400">Failed to load analytics engine.</div>;
 
   const stats = [
-    { label: "SLA Compliance", value: `${data.slaPerformance?.[3]?.onTime || 92}%`, icon: CheckCircle2, color: "text-green-500" },
+    { label: "SLA Compliance", value: `${data.slaPerformance?.[0]?.onTime || 92}%`, icon: CheckCircle2, color: "text-green-500" },
     { label: "Avg Resolution", value: `${data.wardStats?.[0]?.avgResolutionHrs || 4.2}h`, icon: Clock, color: "text-accent" },
     { label: "Citizen Satisfaction", value: `${data.wardStats?.[0]?.citizenSatisfaction || 85}%`, icon: TrendingUp, color: "text-blue-400" },
   ];
@@ -73,7 +82,7 @@ export function AnalyticsSection() {
                 <YAxis stroke="#666" fontSize={10} />
                 <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px' }} />
                 <Bar dataKey="slaRate" fill="var(--accent)">
-                  {data.wardStats.map((entry: any, index: number) => (
+                  {data.wardStats.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.slaRate < 80 ? '#ef4444' : 'var(--accent)'} />
                   ))}
                 </Bar>
@@ -89,22 +98,22 @@ export function AnalyticsSection() {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-               <RePie>
-                 <Pie
-                   data={data.categoryTrend}
-                   dataKey="count"
-                   nameKey="cat"
-                   cx="50%"
-                   cy="50%"
-                   outerRadius={80}
-                   label={{ fontSize: 10, fill: '#fff' }}
-                 >
-                   {data.categoryTrend.map((entry: any, index: number) => (
-                     <Cell key={`cell-${index}`} fill={entry.color || 'var(--accent)'} />
-                   ))}
-                 </Pie>
-                 <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px' }} />
-               </RePie>
+              <RePie>
+                <Pie
+                  data={data.categoryTrend}
+                  dataKey="count"
+                  nameKey="cat"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label={{ fontSize: 10, fill: '#fff' }}
+                >
+                  {data.categoryTrend.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || 'var(--accent)'} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px' }} />
+              </RePie>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -112,3 +121,4 @@ export function AnalyticsSection() {
     </div>
   );
 }
+

@@ -1,81 +1,90 @@
-# JanSamvaad - ResolveOS
+﻿# JanSamvaad ResolveOS (Frontend-First Branch)
 
-## Overview
-JanSamvaad ResolveOS is a civic complaint management platform that connects citizens, officials, and administrators in one workflow. Citizens can file issues with evidence, track progress, and upvote community problems while authorities manage resolution with role-based controls.
+## Branch intent
+This branch preserves the polished Next.js frontend UI/UX and isolates backend-heavy implementation details so the frontend can be merged with the `main` backend later with minimal conflict.
 
-## Features
-- User registration and secure authentication
-- Complaint creation with optional image uploads
-- Status tracking across full complaint lifecycle
-- Upvote support for community prioritization
-- Admin dashboard for monitoring and management
-- Role-based access control (USER / OFFICIAL / ADMIN)
+## What is preserved
+- Current pages, layouts, navigation, and visual system in `app/` and `components/`
+- Dashboard experience (overview, GIS, ledger, analytics, settings)
+- Resolution/feedback UI flows (`/resolve/[id]`, `/feedback/[id]`, `/public/resolve/[id]`)
+- UI component library and styling tokens
 
-## Tech Stack
-- Next.js 14+ (App Router)
-- Prisma + PostgreSQL
-- NextAuth.js (Credentials/JWT)
-- Cloudinary for media storage
-- Tailwind CSS + shadcn/ui
-- Zod + TypeScript
+## What was isolated
+Backend-coupled code has been moved under `legacy-backend/` to keep active frontend paths clean:
+- Next route handlers previously in `app/api/`
+- Legacy `src/app/`, `src/api/`, `src/db/`, `src/services/`, `src/repositories/`, `src/webhooks/`, and related server internals
+- Legacy Prisma-generated and server orchestration files
 
-## Getting Started
+## Frontend-canonical folders
+- `app/` : active frontend routes/pages
+- `components/` : active UI and dashboard sections
+- `hooks/` : frontend data/realtime hooks
+- `src/lib/api/` : API abstraction layer
+- `src/lib/contracts/` : frontend DTO contracts
+- `src/lib/mappers/` : backend-response normalization
+- `src/lib/auth/` : frontend auth/session adapter
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL
-- Cloudinary account (optional for local dev, recommended for production)
+## API abstraction design
+Frontend now calls API abstractions instead of backend internals.
 
-### Installation
-1. Clone the repository
-2. Install dependencies:
-   `npm install`
-3. Copy env template:
-   `cp .env.example .env`
-4. Update environment values in `.env`
-5. Run database migrations:
-   `npx prisma migrate dev`
-6. Generate Prisma client:
-   `npx prisma generate`
-7. Seed sample data:
-   `npx prisma db seed`
-8. Start development server:
-   `npm run next-dev`
+### API clients
+- `src/lib/api/client.ts`
+- `src/lib/api/endpoints.ts`
+- `src/lib/api/complaints.ts`
+- `src/lib/api/users.ts`
+- `src/lib/api/dashboard.ts`
+- `src/lib/api/upload.ts`
+- `src/lib/api/auth.ts`
 
-### Default Accounts
-- Admin: `admin@jansamvaad.gov.in` / `Admin@123456`
-- Official: `official@jansamvaad.gov.in` / `Official@123456`
-- User: `rahul@example.com` / `User@123456`
+### Contracts
+- `src/lib/contracts/complaint.ts`
+- `src/lib/contracts/user.ts`
+- `src/lib/contracts/dashboard.ts`
+- `src/lib/contracts/notification.ts`
+- `src/lib/contracts/common.ts`
 
-## Project Structure
-```text
-app/                        # Next.js app routes used by runtime
-src/
-  app/                      # Extended app routes/pages for modular features
-  components/               # Shared UI and feature components
-  lib/                      # Auth, constants, utilities
-  services/                 # Domain services
-  repositories/             # Data access logic
-  types/                    # Type augmentations and shared types
-prisma/
-  schema.prisma             # DB schema
-  seed.ts                   # Idempotent seed data
+### Mappers
+- `src/lib/mappers/complaint.mapper.ts`
+- `src/lib/mappers/user.mapper.ts`
+- `src/lib/mappers/dashboard.mapper.ts`
+
+## Auth decoupling
+Frontend auth consumption is now adapter-based:
+- `src/lib/auth/client.ts` exposes `login`, `logout`, `register`, `getSessionUser`, `requireFrontendAuth`
+- `src/lib/auth/session.ts` manages lightweight frontend session/token storage
+- UI pages no longer directly depend on NextAuth internals
+
+## Environment setup
+Copy `.env.example` to `.env` and set at least:
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_SOCKET_URL`
+- `NEXT_PUBLIC_AUTH_MODE`
+
+## Run frontend
+```bash
+npm install
+npm run dev
 ```
 
-## API Endpoints
-- `POST /api/auth/register` - Register user
-- `GET/POST /api/auth/[...nextauth]` - Auth handlers
-- `GET /api/dashboard/stats` - Dashboard statistics
-- `GET /api/complaints` - List complaints
-- `POST /api/complaints` - Create complaint
-- `GET/PATCH/DELETE /api/complaints/:id` - Complaint detail/update/delete
-- `PATCH /api/complaints/:id/status` - Update complaint status
-- `POST /api/complaints/:id/upvote` - Toggle upvote
-- `POST /api/upload` - Upload files
-- `DELETE /api/upload/:id` - Delete uploaded file
-- `GET/PATCH /api/users/me` - Current user profile
-- `PATCH /api/users/me/password` - Change password
-- `GET /api/admin/users` - Admin-only user list
+## Validate
+```bash
+npx tsc --noEmit
+npm run build
+```
 
-## License
-MIT
+## Legacy backend (optional)
+Legacy backend code is archived under `legacy-backend/`.
+If needed for reference or temporary local use:
+```bash
+npm run server
+```
+
+## How to integrate with main backend later
+1. Keep UI/components unchanged.
+2. Remap endpoint paths in `src/lib/api/endpoints.ts` to `main` backend routes.
+3. Adjust response normalization in `src/lib/mappers/*` only.
+4. Keep DTO contracts stable so page/component code does not change.
+5. If auth semantics differ, adapt only `src/lib/auth/*` and `src/lib/api/auth.ts`.
+
+This branch is now frontend-first and merge-ready for backend integration.
+

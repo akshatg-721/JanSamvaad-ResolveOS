@@ -1,15 +1,16 @@
-import { User, Complaint, Attachment } from '@prisma/client';
-
-export type Section = "overview" | "gis" | "ledger" | "activity" | "analytics" | "settings";
+﻿export type Section = 'overview' | 'gis' | 'ledger' | 'activity' | 'analytics' | 'settings';
 
 export type UserRole = 'USER' | 'ADMIN' | 'OFFICIAL';
-export type ComplaintStatus = 
+
+export type ComplaintStatus =
+  | 'OPEN'
   | 'PENDING'
   | 'ACKNOWLEDGED'
   | 'IN_PROGRESS'
   | 'RESOLVED'
   | 'REJECTED'
   | 'CLOSED';
+
 export type ComplaintCategory =
   | 'ROADS'
   | 'WATER'
@@ -47,3 +48,4 @@ export interface PaginationMeta {
 export interface PaginatedApiResponse<T> extends ApiResponse<T[]> {
   pagination: PaginationMeta;
 }
+

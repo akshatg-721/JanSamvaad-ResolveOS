@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Star, ShieldCheck, CheckCircle2, Loader2, Send } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
+import { submitTicketResolutionFeedback } from "@/lib/api/complaints";
 
 function safeUiErrorMessage(err: unknown, fallback: string): string {
   const msg = (err as { message?: string })?.message?.trim() || "";
@@ -35,10 +35,7 @@ export default function FeedbackPage() {
 
     setStatus("submitting");
     try {
-      await apiFetch(`/api/tickets/${ticketId}/resolve`, {
-        method: "POST",
-        body: JSON.stringify({ token, rating, text: feedback }),
-      });
+      await submitTicketResolutionFeedback(ticketId, { token, rating, text: feedback });
       setStatus("success");
     } catch (err: unknown) {
       setErrorMessage(safeUiErrorMessage(err, "Failed to submit feedback. The token may be invalid or expired."));
@@ -160,3 +157,4 @@ export default function FeedbackPage() {
     </div>
   );
 }
+

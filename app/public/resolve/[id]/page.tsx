@@ -1,15 +1,16 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { submitTicketResolutionFeedback } from "@/lib/api/complaints";
 
 export default function PublicResolvePage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const id = params.id;
+  const id = params.id as string;
   const token = searchParams.get("token");
 
   const [rating, setRating] = useState(0);
@@ -25,19 +26,15 @@ export default function PublicResolvePage() {
 
     setStatus('submitting');
     try {
-      const res = await fetch(`http://localhost:3000/api/tickets/${id}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, rating, text: comment })
+      await submitTicketResolutionFeedback(id, {
+        token,
+        rating,
+        text: comment,
       });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to submit resolution");
-
       setStatus('success');
     } catch (err: any) {
       setStatus('error');
-      setErrorMsg(err.message);
+      setErrorMsg(err?.message || 'Failed to submit resolution');
     }
   };
 
@@ -108,3 +105,4 @@ export default function PublicResolvePage() {
     </div>
   );
 }
+

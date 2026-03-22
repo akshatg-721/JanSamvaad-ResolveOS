@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, UserCircle2, Lock, ArrowRight, Loader2 } from "lucide-react";
-import { signIn } from "next-auth/react";
 import { Input } from "@/components/ui/input";
+import { login } from "@/lib/auth/client";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MS = 60_000;
@@ -39,32 +39,23 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        email: operatorId,
-        password: password
-      });
-      
-      if (res?.error) {
-        const nextAttempts = failedAttempts + 1;
-        setFailedAttempts(nextAttempts);
-        if (nextAttempts >= MAX_FAILED_ATTEMPTS) {
-          setLockedUntil(Date.now() + LOCKOUT_MS);
-          setError("Too many failed attempts. Please wait 60 seconds and try again.");
-        } else {
-          setError(safeUiErrorMessage(res.error, "Login failed. Please check your credentials."));
-        }
-      } else {
-        setFailedAttempts(0);
-        setLockedUntil(null);
-        const callbackUrl =
-          typeof window !== "undefined"
-            ? new URLSearchParams(window.location.search).get("callbackUrl")
-            : null;
-        router.push(callbackUrl || "/demo");
-      }
+      await login({ username: operatorId, email: operatorId, password });
+      setFailedAttempts(0);
+      setLockedUntil(null);
+      const callbackUrl =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("callbackUrl")
+          : null;
+      router.push(callbackUrl || "/demo");
     } catch (err: unknown) {
-      setError(safeUiErrorMessage(err, "Login failed. Please check your credentials."));
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+      if (nextAttempts >= MAX_FAILED_ATTEMPTS) {
+        setLockedUntil(Date.now() + LOCKOUT_MS);
+        setError("Too many failed attempts. Please wait 60 seconds and try again.");
+      } else {
+        setError(safeUiErrorMessage(err, "Login failed. Please check your credentials."));
+      }
     } finally {
       setLoading(false);
     }
@@ -167,3 +158,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

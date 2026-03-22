@@ -1,9 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { BellDot, ChevronRight, LocateFixed, Search, Sparkles } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+import { getComplaints } from "@/lib/api/complaints";
+import type { ComplaintDTO } from "@/lib/contracts/complaint";
 
 const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
@@ -28,6 +30,22 @@ const sampleTickets: Ticket[] = [
   { id: "3", ref: "#T-8871", category: "Garbage Collection", priority: "LOW", status: "RESOLVED", ward: "Ward 21 (East)", lat: 28.6287, lng: 77.2376, summary: "Collection skipped for two days in lane cluster." },
   { id: "4", ref: "#T-9105", category: "Illegal Construction", priority: "URGENT", status: "NEW", ward: "Ward 12 (Central)", lat: 28.6182, lng: 77.2045, summary: "Unauthorized extension obstructing sewer access." },
 ];
+
+function toTicket(item: ComplaintDTO, idx: number): Ticket {
+  const severity = String(item.severity).toUpperCase();
+  const status = String(item.status).toUpperCase();
+  return {
+    id: item.id,
+    ref: item.ref ? `#${item.ref.replace(/^#/, '')}` : `#T-${item.id.slice(-4)}`,
+    category: item.category.replaceAll("_", " "),
+    priority: severity === "CRITICAL" || severity === "HIGH" || item.priority >= 2 ? "URGENT" : item.priority === 1 ? "MEDIUM" : "LOW",
+    status: status === "RESOLVED" || status === "CLOSED" ? "RESOLVED" : status === "IN_PROGRESS" ? "IN_PROGRESS" : "NEW",
+    ward: item.location?.address || item.wardName || `Ward ${item.wardId ?? idx + 1}`,
+    lat: item.location?.lat || 28.6139 + idx * 0.005,
+    lng: item.location?.lng || 77.209 + idx * 0.004,
+    summary: item.description || "No summary",
+  };
+}
 
 function StatCard({ title, value, sub }: { title: string; value: string; sub: string }) {
   return (
@@ -70,21 +88,10 @@ export function OverviewSection() {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch("/api/complaints?limit=8");
-        const body = await res.json();
-        if (!mounted || !body?.success || !Array.isArray(body.data)) return;
-        const mapped: Ticket[] = body.data.slice(0, 8).map((item: any, idx: number) => ({
-          id: item.id,
-          ref: `#T-${String(item.id).slice(-4)}`,
-          category: String(item.category || "General").replaceAll("_", " "),
-          priority: item.priority >= 2 ? "URGENT" : item.priority === 1 ? "MEDIUM" : "LOW",
-          status: item.status === "RESOLVED" ? "RESOLVED" : item.status === "IN_PROGRESS" ? "IN_PROGRESS" : "NEW",
-          ward: item.location?.address || `Ward ${idx + 1}`,
-          lat: item.location?.lat || 28.6139 + idx * 0.005,
-          lng: item.location?.lng || 77.209 + idx * 0.004,
-          summary: item.description || "No summary",
-        }));
-        if (mapped.length > 0) setTickets(mapped);
+        const page = await getComplaints({ limit: 8 });
+        if (!mounted || page.items.length === 0) return;
+        const mapped = page.items.slice(0, 8).map((item, idx) => toTicket(item, idx));
+        setTickets(mapped);
       } catch {
         // Keep fallback data if API is unavailable.
       }
@@ -209,7 +216,7 @@ export function OverviewSection() {
             <MiniIncidentMap tickets={tickets.slice(0, 5)} />
             <div className="mt-3 flex items-center gap-2 text-sm text-white/70">
               <LocateFixed className="w-4 h-4 text-[#3be38f]" />
-              28.6139° N, 77.2090° E
+              28.6139 N, 77.2090 E
             </div>
           </div>
         </div>
@@ -217,3 +224,4 @@ export function OverviewSection() {
     </div>
   );
 }
+

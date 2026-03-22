@@ -1,3 +1,5 @@
+import { describe, it, expect, vi } from 'vitest';
+import '@/test/mock-prisma';
 import { ComplaintService } from './complaint.service';
 import { Role } from '../types';
 import { COMPLAINT_STATUS } from '../constants/complaint.constants';
@@ -7,7 +9,7 @@ describe('ComplaintService', () => {
     it('should throw an error if complaint is not found', async () => {
       const dbMock: any = {
         complaint: {
-          findUnique: jest.fn().mockResolvedValue(null),
+          findUnique: vi.fn().mockResolvedValue(null),
         },
       };
       const service = new ComplaintService(dbMock);
@@ -20,21 +22,21 @@ describe('ComplaintService', () => {
     it('should update status and write status history for valid transitions', async () => {
       const txMock = {
         complaint: {
-          update: jest.fn().mockResolvedValue({ id: 'c1', status: COMPLAINT_STATUS.RESOLVED }),
+          update: vi.fn().mockResolvedValue({ id: 'c1', status: COMPLAINT_STATUS.RESOLVED }),
         },
         statusHistory: {
-          create: jest.fn().mockResolvedValue({ id: 'h1' }),
+          create: vi.fn().mockResolvedValue({ id: 'h1' }),
         },
       };
 
       const dbMock: any = {
         complaint: {
-          findUnique: jest.fn().mockResolvedValue({
+          findUnique: vi.fn().mockResolvedValue({
             status: COMPLAINT_STATUS.IN_PROGRESS,
             userId: 'user-1',
           }),
         },
-        $transaction: jest.fn().mockImplementation(async (callback: any) => callback(txMock)),
+        $transaction: vi.fn().mockImplementation(async (callback: any) => callback(txMock)),
       };
 
       const service = new ComplaintService(dbMock);

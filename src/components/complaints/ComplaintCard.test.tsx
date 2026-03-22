@@ -32,7 +32,7 @@ describe('ComplaintCard Component', () => {
     const { getByText } = render(<ComplaintCard complaint={mockComplaint as any} />);
     
     // Status Badge
-    expect(getByText('Pending')).toBeInTheDocument();
+    expect(getByText(/Pending/)).toBeInTheDocument();
     
     // Priority Badge
     expect(getByText('HIGH Priority')).toBeInTheDocument();

@@ -10,3 +10,5 @@ _archive/
 dashboard/
 dist/
 coverage/
+
+/src/generated/prisma

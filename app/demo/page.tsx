@@ -13,8 +13,7 @@ import { AnalyticsSection } from "@/components/dashboard/sections/analytics";
 
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/api-client";
-
-export type Section = "overview" | "gis" | "ledger" | "activity" | "analytics" | "settings";
+import type { Section } from "@/lib/types";
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState<Section>("gis");

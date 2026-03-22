@@ -1,6 +1,5 @@
 const express = require('express');
 const twilio = require('twilio');
-const { VoiceResponse } = twilio.twiml;
 const pool = require('../db');
 const { isDndNumber } = require('../../lib/dndScrub');
 const { extractIntent } = require('../services/llm');
@@ -14,11 +13,25 @@ const { findDuplicate } = require('../services/duplicateDetector');
 const { notifyNewTicket } = require('../services/notification');
 const logger = require('../utils/logger');
 
+// VoiceResponse is available directly from twilio.twiml (no client needed)
+const { VoiceResponse } = twilio.twiml;
+
 const router = express.Router();
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
+
+// Guard Twilio client init — invalid or missing SID/TOKEN should not crash the server
+let twilioClient = null;
+try {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (sid && token && sid.startsWith('AC')) {
+    twilioClient = twilio(sid, token);
+  } else if (sid || token) {
+    logger.warn('Twilio credentials present but SID does not start with AC — SMS disabled');
+  }
+} catch (err) {
+  logger.warn({ err: err.message }, 'Twilio client init failed — SMS notifications disabled');
+}
 
 function validateTwilioSignature(req, res, next) {
   if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {

@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  OFFICIAL
+}
+
+enum ComplaintStatus {
+  PENDING
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum ComplaintCategory {
+  ROADS
+  WATER
+  ELECTRICITY
+  SANITATION
+  PUBLIC_SAFETY
+  TRANSPORTATION
+  OTHER
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  email               String             @unique
+  name                String
+  passwordHash        String
+  phone               String?
+  role                Role               @default(USER)
+  avatar              String?
+  emailVerified       DateTime?
+  failedLoginAttempts Int                @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  complaints          Complaint[]        @relation("UserComplaints")
+  assignedComplaints  Complaint[]        @relation("AssignedComplaints")
+  attachments         Attachment[]
+  statusHistories     StatusHistory[]
+  comments            Comment[]
+  upvotes             Upvote[]
+
+  @@index([email])
+}
+
+model Complaint {
+  id          String            @id @default(cuid())
+  title       String
+  description String            @db.Text
+  category    ComplaintCategory
+  status      ComplaintStatus   @default(PENDING)
+  severity    Severity          @default(LOW)
+  
+  // Location
+  address     String
+  city        String?
+  state       String?
+  pincode     String?
+  lat         Float?
+  lng         Float?
+
+  userId      String
+  user        User              @relation("UserComplaints", fields: [userId], references: [id], onDelete: Cascade)
+  
+  assignedToId String?
+  assignedTo   User?            @relation("AssignedComplaints", fields: [assignedToId], references: [id])
+
+  tokens      String?
+  slaDeadline DateTime?
+  resolvedAt  DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  attachments Attachment[]
+  statusHistory StatusHistory[]
+  comments      Comment[]
+  upvotes       Upvote[]
+
+  @@index([userId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([category])
+  @@index([lat, lng])
+}
+
+model Attachment {
+  id           String    @id @default(cuid())
+  filename     String
+  cloudinaryId String
+  url          String
+  thumbnailUrl String?
+  mediumUrl    String?
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  complaintId  String?
+  complaint    Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([complaintId])
+}
+
+model StatusHistory {
+  id          String          @id @default(cuid())
+  complaintId String
+  complaint   Complaint       @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  
+  fromStatus  ComplaintStatus
+  toStatus    ComplaintStatus
+  
+  changedById String
+  changedBy   User            @relation(fields: [changedById], references: [id], onDelete: Restrict)
+  
+  comment     String?         @db.Text
+  createdAt   DateTime        @default(now())
+
+  @@index([complaintId])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  content     String    @db.Text
+  isOfficial  Boolean   @default(false)
+
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([complaintId])
+  @@index([userId])
+}
+
+model Upvote {
+  id          String    @id @default(cuid())
+  
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@unique([complaintId, userId]) // User can only upvote a complaint once
+}

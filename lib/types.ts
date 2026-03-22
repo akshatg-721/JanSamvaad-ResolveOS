@@ -1,3 +1,6 @@
+// Dashboard section identifiers — shared by Sidebar, Header, and demo/page
+export type Section = "overview" | "gis" | "ledger" | "activity" | "analytics" | "settings";
+
 export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type Status   = 'OPEN' | 'IN-PROGRESS' | 'RESOLVED';
 export type Category = string;

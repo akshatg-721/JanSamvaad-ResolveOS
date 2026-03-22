@@ -12,9 +12,16 @@ const router = express.Router();
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioFromNumber = process.env.TWILIO_PHONE_NUMBER;
-const twilioClient = twilioAccountSid && twilioAuthToken
-  ? twilio(twilioAccountSid, twilioAuthToken)
-  : null;
+const twilioClient = (() => {
+  if (twilioAccountSid && twilioAuthToken && twilioAccountSid.startsWith('AC')) {
+    try {
+      return twilio(twilioAccountSid, twilioAuthToken);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+})();
 
 // ── Validation schemas ────────────────────────────────────────────────────────
 const uploadSchema = z.object({

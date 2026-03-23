@@ -258,7 +258,7 @@ ENABLE_SLA_CRON=true
 |------|------|
 | **Akshat Goyal** ⭐ | Team Lead & Full Stack Developer |
 | **Harsheet Dwivedi** | AI & Backend Engineer |
-| **Pranav Aggarwal** | Frontend & UI Engineer |
+| **Pranav Agarwal** | Frontend & UI Engineer |
 | **Aditya Jain** | Research & Deployment Engineer |
 
 **BML Munjal University** | India Innovates 2026 — The FiSTA

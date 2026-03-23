@@ -86,7 +86,7 @@ function formatCountdown(deadline, nowMs) {
   const label = `${diff < 0 ? '-' : ''}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   if (diff < 0) {
-    return { label: `BREACHED ${label}`, tone: 'text-red-300', urgent: true };
+    return { label: '🔴 BREACHED', tone: 'text-red-400 animate-pulse font-bold', urgent: true };
   }
   if (diff <= 30 * 60000) {
     return { label, tone: 'text-red-300', urgent: true };

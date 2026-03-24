@@ -814,6 +814,7 @@ export default function Dashboard() {
     };
     const response = await fetch(url, {
       ...options,
+      credentials: 'include',
       headers
     });
 
@@ -1176,8 +1177,11 @@ export default function Dashboard() {
     setLoginSubmitting(true);
     setLoginError('');
     try {
-      const response = await fetch(`${API}/api/auth/login`, {
+      const loginUrl = `${API || ''}/api/auth/login`;
+      console.log('Attempting login to:', loginUrl);
+      const response = await fetch(loginUrl, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },

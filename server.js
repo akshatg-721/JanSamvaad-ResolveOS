@@ -14,9 +14,28 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = [
+  'https://jansamvaad-resolveos.vercel.app',
+  'https://jansamvaad-resolveos.vercel.app.',
+  'http://localhost:5173'
+];
+
+function resolveCorsOrigin(origin, callback) {
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
+  if (allowedOrigins.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+  callback(new Error('Not allowed by CORS'));
+}
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173'
+    origin: allowedOrigins,
+    credentials: true
   }
 });
 
@@ -29,7 +48,10 @@ const authRouter = require('./src/api/auth');
 const dashboardRouter = require('./src/api/dashboard');
 const evidenceRouter = require('./src/api/evidence');
 
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173' }));
+app.use(cors({
+  origin: resolveCorsOrigin,
+  credentials: true
+}));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use((req, res, next) => {

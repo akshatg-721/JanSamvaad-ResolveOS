@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 
-const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API = 'https://jansamvaad-backend-608936922611.us-central1.run.app';
 
 /* ─── Severity colors ─── */
 const SEV = {

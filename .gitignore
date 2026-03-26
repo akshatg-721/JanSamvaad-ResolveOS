@@ -9,3 +9,5 @@ frontend/dist/
 .DS_Store
 **/.DS_Store
 .vercel
+Library/
+.npm/

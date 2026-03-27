@@ -38,6 +38,10 @@ const io = new Server(server, {
     credentials: true
   }
 });
+const corsOptions = {
+  origin: resolveCorsOrigin,
+  credentials: true
+};
 
 const PORT = Number(process.env.PORT || 3000);
 app.set('io', io);
@@ -48,10 +52,8 @@ const authRouter = require('./src/api/auth');
 const dashboardRouter = require('./src/api/dashboard');
 const evidenceRouter = require('./src/api/evidence');
 
-app.use(cors({
-  origin: resolveCorsOrigin,
-  credentials: true
-}));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use((req, res, next) => {

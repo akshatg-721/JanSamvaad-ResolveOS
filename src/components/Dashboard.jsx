@@ -11,7 +11,7 @@ import QRScanner from './pages/QRScanner';
 import SettingsPage from './pages/Settings';
 
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
-const API = 'https://jansamvaad-backend-608936922611.us-central1.run.app';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 
 const SEVERITY_CLASS_MAP = {
   CRITICAL: 'bg-[#CC0000]/20 text-[#FF4444] border border-[#CC0000]/30',
@@ -250,6 +250,20 @@ const DEMO_TICKETS = [
   buildDemoTicket({ id: 25, ref: 'GRV-U1V2W3', category: 'Electricity Outage', ward_id: 7, severity: 'HIGH', status: 'in_progress', hoursAgo: 7, phone: '+919812345625', summary: 'Localized power interruption in Ward 7 due to feeder tripping under restoration.' })
 ];
 
+const DEFAULT_AI_SUMMARY = {
+  summaryText: 'AI summary will appear here after analyzing recent unresolved tickets.',
+  highlightedEntities: [],
+  suggestedActions: [
+    { title: 'Dispatch Maintenance Crew', subtitle: 'Estimated Resolve: 2h' },
+    { title: 'Notify Ward Counselor', subtitle: 'Protocol requirement' },
+    { title: 'Merge Related Tickets', subtitle: 'Pattern scan in progress' }
+  ],
+  meta: {
+    fallback: false,
+    reason: null
+  }
+};
+
 function decodeJwtUsername(token) {
   try {
     const payloadPart = String(token || '').split('.')[1];
@@ -407,6 +421,102 @@ const ActivitySidebar = memo(function ActivitySidebar({ items, ready }) {
             </div>
           ))
         )}
+      </div>
+    </aside>
+  );
+});
+
+const AIResolutionSummaryCard = memo(function AIResolutionSummaryCard({ data, loading, error, lastUpdatedAt, nowMs }) {
+  const renderSummary = useCallback(() => {
+    const text = String(data?.summaryText || '');
+    const entities = Array.isArray(data?.highlightedEntities) ? data.highlightedEntities.filter(Boolean) : [];
+    if (!text || entities.length === 0) {
+      return <span>{text || DEFAULT_AI_SUMMARY.summaryText}</span>;
+    }
+    const escaped = entities
+      .map((entity) => String(entity).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .filter(Boolean);
+    if (escaped.length === 0) {
+      return <span>{text}</span>;
+    }
+    const matcher = new RegExp(`(${escaped.join('|')})`, 'gi');
+    const parts = text.split(matcher);
+    return parts.map((part, index) => {
+      const matched = entities.find((entity) => String(entity).toLowerCase() === String(part).toLowerCase());
+      if (!matched) {
+        return <span key={`${part}-${index}`}>{part}</span>;
+      }
+      const lowered = String(part).toLowerCase();
+      const highlightClass = lowered.includes('surge') || lowered.includes('transformer')
+        ? 'text-indigo-300'
+        : 'text-teal-300';
+      return <span key={`${part}-${index}`} className={`font-semibold ${highlightClass}`}>{part}</span>;
+    });
+  }, [data]);
+
+  const actions = Array.isArray(data?.suggestedActions) && data.suggestedActions.length > 0
+    ? data.suggestedActions
+    : DEFAULT_AI_SUMMARY.suggestedActions;
+  const fallback = Boolean(data?.meta?.fallback);
+  const fallbackReason = String(data?.meta?.reason || '');
+  const fallbackMessage = fallbackReason === 'rate_limited'
+    ? 'AI is at capacity right now. Showing a smart fallback summary.'
+    : fallback
+      ? 'Showing fallback guidance while AI completes analysis.'
+      : '';
+
+  return (
+    <aside className="rounded-2xl border border-white/10 bg-[#1E222D] p-5 shadow-xl shadow-black/30">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/15 text-teal-300">
+            ✨
+          </span>
+          <h3 className="text-lg font-bold tracking-tight text-white">AI Resolution Summary</h3>
+        </div>
+        <p className="pt-1 text-[11px] text-slate-400" data-tick={nowMs}>
+          {loading ? 'updating…' : `updated ${lastUpdatedAt ? formatRelativeTime(lastUpdatedAt) : 'just now'}`}
+        </p>
+      </div>
+
+      <div className="rounded-xl bg-[#2A3140] p-4">
+        {fallbackMessage ? (
+          <div className="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] text-amber-200">
+            {fallbackMessage}
+          </div>
+        ) : null}
+        {loading ? (
+          <div className="space-y-2 animate-pulse">
+            <div className="h-3 rounded bg-slate-600/60" />
+            <div className="h-3 rounded bg-slate-600/50" />
+            <div className="h-3 w-4/5 rounded bg-slate-600/40" />
+          </div>
+        ) : error ? (
+          <p className="text-xs text-rose-300">{error}</p>
+        ) : (
+          <p className="text-sm leading-relaxed text-slate-300">{renderSummary()}</p>
+        )}
+      </div>
+
+      <div className="mt-5">
+        <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Suggested Actions</p>
+        <div className="space-y-2.5">
+          {actions.map((action) => (
+            <button
+              key={action.title}
+              type="button"
+              className="group w-full rounded-xl border border-white/5 bg-[#1B2130] px-4 py-3 text-left transition-all duration-200 hover:bg-[#242B3A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-100">{action.title}</p>
+                  <p className="mt-0.5 text-xs text-slate-400">{action.subtitle}</p>
+                </div>
+                <span className="text-slate-500 transition-colors group-hover:text-slate-300">{'>'}</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </aside>
   );
@@ -710,6 +820,14 @@ export default function Dashboard() {
   const [expandedRows, setExpandedRows] = useState({});
   const [activePage, setActivePage] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [aiSummary, setAiSummary] = useState(DEFAULT_AI_SUMMARY);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+  const [aiSummaryError, setAiSummaryError] = useState('');
+  const [aiSummaryUpdatedAt, setAiSummaryUpdatedAt] = useState(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
   const [trends, setTrends] = useState({
     total: 0,
     open: 0,
@@ -724,6 +842,7 @@ export default function Dashboard() {
   const bellButtonRef = useRef(null);
   const drawerRef = useRef(null);
   const drawerCloseButtonRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
   useEffect(() => {
     const dmSans = document.createElement('link');
@@ -773,6 +892,7 @@ export default function Dashboard() {
     setOperatorName('Operator');
     setSocketLive(false);
     setError('');
+    setIsAssistantOpen(false);
   }, []);
 
   const addActivity = useCallback((type, message, ticket) => {
@@ -864,6 +984,83 @@ export default function Dashboard() {
     }
   }, [authFetch, authToken]);
 
+  const fetchAiSummary = useCallback(async () => {
+    if (!authToken) {
+      return;
+    }
+    if (DEMO_MODE) {
+      setAiSummary(DEFAULT_AI_SUMMARY);
+      setAiSummaryError('');
+      return;
+    }
+    setAiSummaryLoading(true);
+    setAiSummaryError('');
+    try {
+      const response = await authFetch(`${API}/api/tickets/ai-summary`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch AI summary');
+      }
+      const payload = await response.json();
+      setAiSummary({
+        summaryText: String(payload?.summaryText || DEFAULT_AI_SUMMARY.summaryText),
+        highlightedEntities: Array.isArray(payload?.highlightedEntities) ? payload.highlightedEntities : [],
+        suggestedActions: Array.isArray(payload?.suggestedActions) && payload.suggestedActions.length > 0
+          ? payload.suggestedActions
+          : DEFAULT_AI_SUMMARY.suggestedActions,
+        meta: {
+          fallback: Boolean(payload?.meta?.fallback),
+          reason: payload?.meta?.reason || null
+        }
+      });
+      setAiSummaryUpdatedAt(new Date().toISOString());
+    } catch (err) {
+      setAiSummaryError('Unable to generate AI summary right now.');
+      setAiSummary(DEFAULT_AI_SUMMARY);
+      setAiSummaryUpdatedAt(new Date().toISOString());
+    } finally {
+      setAiSummaryLoading(false);
+    }
+  }, [authFetch, authToken]);
+
+  const sendMessage = useCallback(async () => {
+    const message = chatInput.trim();
+    if (!message || chatLoading || !authToken) {
+      return;
+    }
+    setChatInput('');
+    setChatHistory((previous) => [...previous, { role: 'user', text: message }]);
+    setChatLoading(true);
+    try {
+      const response = await authFetch(`${API}/api/assistant/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+      });
+      if (!response.ok) {
+        throw new Error('Assistant request failed');
+      }
+      const payload = await response.json();
+      const assistantText = String(payload?.response || '').trim() || 'ResolveOS Assistant is temporarily unavailable. Please try again in a moment.';
+      setChatHistory((previous) => [...previous, { role: 'assistant', text: assistantText }]);
+    } catch (err) {
+      setChatHistory((previous) => [
+        ...previous,
+        { role: 'assistant', text: 'ResolveOS Assistant is temporarily unavailable. Please try again.' }
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [authFetch, authToken, chatInput, chatLoading]);
+
+  const handleChatKeyDown = useCallback((event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  }, [sendMessage]);
+
   useEffect(() => {
     if (DEMO_MODE) {
       setLoading(false);
@@ -894,6 +1091,7 @@ export default function Dashboard() {
       }, 2000);
       addActivity('new_ticket', `New ticket ${ticket.ref} • ${displayCategory(ticket.category)} ${displayWard(ticket)}`, ticket);
       addToast('new_ticket', `📞 New ticket: ${displayCategory(ticket.category)} ${displayWard(ticket)}`);
+      fetchAiSummary();
     });
 
     socket.on('ticket_resolved', (ticket) => {
@@ -919,7 +1117,7 @@ export default function Dashboard() {
       socket.off('disconnect', onDisconnect);
       socket.disconnect();
     };
-  }, [addActivity, addToast, authToken, fetchData, mergeTicket]);
+  }, [addActivity, addToast, authToken, fetchAiSummary, fetchData, mergeTicket]);
 
   useEffect(() => {
     if (DEMO_MODE) return undefined;
@@ -932,6 +1130,27 @@ export default function Dashboard() {
 
     return () => clearInterval(interval);
   }, [authToken, fetchData, socketLive]);
+
+  useEffect(() => {
+    if (!authToken) {
+      return;
+    }
+    fetchAiSummary();
+  }, [authToken, fetchAiSummary]);
+
+  useEffect(() => {
+    if (!isAssistantOpen || !authToken) {
+      return;
+    }
+    fetchAiSummary();
+  }, [authToken, fetchAiSummary, isAssistantOpen]);
+
+  useEffect(() => {
+    if (!chatScrollRef.current) {
+      return;
+    }
+    chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+  }, [chatHistory, chatLoading, isAssistantOpen]);
 
   const handleResolve = useCallback(async (ticketId, triggerSource = 'system') => {
     setResolvingTicketIds((previous) => ({
@@ -1151,6 +1370,7 @@ export default function Dashboard() {
     setAuthToken('');
     setOperatorName('Operator');
     setSocketLive(false);
+    setIsAssistantOpen(false);
     setLoginPassword('');
     setLoginError('');
   }, []);
@@ -1514,6 +1734,13 @@ export default function Dashboard() {
               {socketLive ? 'LIVE' : 'OFFLINE'}
             </div>
             <span className="hidden sm:inline text-xs text-slate-400 font-mono">{formatClock(clock)}</span>
+            <button
+              type="button"
+              onClick={() => setIsAssistantOpen(true)}
+              className="bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            >
+              ✨ ResolveOS Assistant
+            </button>
             <button type="button" onClick={handleLogout} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/[0.06] transition-all">Logout</button>
           </div>
         </header>
@@ -1522,6 +1749,86 @@ export default function Dashboard() {
           {renderActivePage()}
         </main>
       </div>
+
+      <aside className={`fixed inset-y-0 right-0 z-50 w-96 flex flex-col bg-[#1E222D] border-l border-white/10 shadow-2xl transform transition-transform duration-300 ease-in-out ${isAssistantOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-teal-500/15 text-teal-300">✨</span>
+            <h2 className="text-sm font-semibold text-white">ResolveOS Assistant</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAssistantOpen(false)}
+            className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 hover:bg-white/10"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex h-full min-h-0 flex-col">
+          <section className="h-1/2 min-h-0 overflow-y-auto p-4">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">LIVE OVERVIEW</p>
+            <AIResolutionSummaryCard
+              data={aiSummary}
+              loading={aiSummaryLoading}
+              error={aiSummaryError}
+              lastUpdatedAt={aiSummaryUpdatedAt}
+              nowMs={nowMs}
+            />
+          </section>
+
+          <hr className="border-white/10" />
+
+          <section className="h-1/2 min-h-0 flex flex-col">
+            <p className="px-4 pt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">ASK RESOLVEOS</p>
+            <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+              {chatHistory.length === 0 ? (
+                <div className="rounded-lg border border-white/10 bg-[#2A3140] p-3 text-xs text-slate-300">
+                  Ask about ticket prioritization, escalation path, or ward-specific action plans.
+                </div>
+              ) : (
+                chatHistory.map((item, index) => (
+                  <div
+                    key={`${item.role}-${index}`}
+                    className={`max-w-[92%] rounded-lg p-3 text-sm whitespace-pre-wrap ${
+                      item.role === 'user'
+                        ? 'ml-auto bg-teal-600/20 border border-teal-500/30 text-slate-100'
+                        : 'mr-auto bg-[#2A3140] text-slate-300'
+                    }`}
+                  >
+                    {item.text}
+                  </div>
+                ))
+              )}
+              {chatLoading ? (
+                <div className="mr-auto max-w-[92%] rounded-lg bg-[#2A3140] p-3 text-sm text-slate-300">
+                  Thinking...
+                </div>
+              ) : null}
+            </div>
+            <div className="sticky bottom-0 border-t border-white/10 bg-[#1E222D] p-3">
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={chatInput}
+                  onChange={(event) => setChatInput(event.target.value)}
+                  onKeyDown={handleChatKeyDown}
+                  rows={1}
+                  placeholder="Ask ResolveOS Assistant..."
+                  className="w-full resize-none rounded-md border border-white/10 bg-slate-900/70 px-3 py-2 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-teal-400/70 transition-all focus:min-h-[72px]"
+                />
+                <button
+                  type="button"
+                  onClick={sendMessage}
+                  disabled={chatLoading || !chatInput.trim()}
+                  className="rounded-md bg-teal-500 px-3 py-2 text-xs font-semibold text-[#0A1628] hover:bg-teal-400 disabled:opacity-60"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </aside>
     </div>
   );
 }

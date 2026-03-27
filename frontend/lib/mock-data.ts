@@ -139,7 +139,7 @@ export function generateWardStats(): WardStats[] {
       totalTickets: total,
       openTickets: open,
       resolvedTickets: resolved,
-      avgResolutionTime: Math.floor(4 + Math.random() * 20),
+      avgResolutionTime: Math.floor(4 + seeded(i + 221) * 20),
       solveRate: Math.round((resolved / total) * 100)
     })
   }
@@ -166,16 +166,37 @@ export function generatePlatformStats(): PlatformStats {
 }
 
 // Generate recent activities
-export function generateActivities(count: number = 20): Activity[] {
+export function generateActivities(count: number = 20, nowMs: number = Date.parse('2026-01-15T10:00:00Z')): Activity[] {
   const activities: Activity[] = []
   const types: Activity['type'][] = ['created', 'assigned', 'updated', 'resolved', 'breached']
   const agents = ['Arjun Sharma', 'Priya Verma', 'Rahul Singh', 'Neha Gupta', 'Amit Kumar']
-  const now = new Date('2026-01-15T10:00:00Z')
+  const recentOffsets = [
+    1000 * 60 * 3,
+    1000 * 60 * 11,
+    1000 * 60 * 28,
+    1000 * 60 * 55,
+    1000 * 60 * 90,
+    1000 * 60 * 130,
+    1000 * 60 * 185,
+    1000 * 60 * 240,
+    1000 * 60 * 320,
+    1000 * 60 * 410,
+    1000 * 60 * 520,
+    1000 * 60 * 650,
+    1000 * 60 * 810,
+    1000 * 60 * 980,
+    1000 * 60 * 1180,
+    1000 * 60 * 1410,
+    1000 * 60 * 1690,
+    1000 * 60 * 2020,
+    1000 * 60 * 2400,
+    1000 * 60 * 2840
+  ]
   
   for (let i = 0; i < count; i++) {
     const type = pickBySeed(types, i + 301)
     const ticketRef = generateRef(i + 200)
-    const timestamp = new Date(now.getTime() - i * 5 * 60 * 1000) // Every 5 minutes
+    const timestamp = new Date(nowMs - recentOffsets[i % recentOffsets.length])
     
     let description = ''
     switch (type) {

@@ -297,8 +297,9 @@ router.post('/api/tickets/:id/feedback', async (req, res) => {
         'UPDATE tickets SET citizen_rating = $1, citizen_feedback = $2 WHERE id = $3',
         [rating, comment || null, ticketId]
       );
-    } catch (_) {
-      // Columns may not exist yet
+    } catch (err) {
+      console.error('Feedback write failed:', err);
+      return res.status(500).json({ error: 'Failed to save feedback' });
     }
 
     (req.log || logger).info({ ticketId, rating, comment }, 'Citizen feedback received');
@@ -328,8 +329,9 @@ router.post('/api/tickets/ref/:ref/feedback', async (req, res) => {
         'UPDATE tickets SET citizen_rating = $1, citizen_feedback = $2 WHERE ref = $3',
         [rating, comment || null, ref]
       );
-    } catch (_) {
-      // Columns may not exist yet
+    } catch (err) {
+      console.error('Feedback write failed:', err);
+      return res.status(500).json({ error: 'Failed to save feedback' });
     }
 
     (req.log || logger).info({ ref, rating, comment }, 'Citizen feedback received (by ref)');

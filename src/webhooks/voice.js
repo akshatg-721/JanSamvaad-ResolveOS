@@ -196,11 +196,29 @@ router.post('/transcribe', async (req, res) => {
 
   try {
     const grievanceIntent = await extractIntent(transcript);
+    let resolvedWardId = null;
+    const wardInput = grievanceIntent && grievanceIntent.ward !== null && grievanceIntent.ward !== undefined
+      ? String(grievanceIntent.ward).trim()
+      : '';
+    if (wardInput) {
+      try {
+        const { rows: wardRows } = await pool.query(
+          `SELECT id FROM wards WHERE LOWER(name) = LOWER($1)
+           OR ward_number::text = $1
+           LIMIT 1`,
+          [wardInput]
+        );
+        if (wardRows.length > 0) {
+          resolvedWardId = wardRows[0].id;
+        }
+      } catch (wardLookupError) {
+        (req.log || logger).error({ err: wardLookupError, wardInput }, 'Ward lookup failed, falling back to null ward_id');
+      }
+    }
     const severityMap = { high: 'High', medium: 'Medium', low: 'Low' };
     const ticketPayload = {
-      category: grievanceIntent.category || 'other',
-      // SAFE IMPROVEMENT: Prevent Postgres foreign-key crashes by nullifying ward_id if AI hallucinates an unknown ward.
-      ward_id: null,
+      category: grievanceIntent.category || 'Other',
+      ward_id: resolvedWardId,
       severity: severityMap[String(grievanceIntent.urgency || '').toLowerCase()] || 'Medium'
     };
 
@@ -235,6 +253,36 @@ router.post('/transcribe', async (req, res) => {
 
     const ticket = await createTicket(phone, ticketPayload);
     (req.log || logger).info({ ticketRef: ticket.ref }, 'Ticket created from transcription');
+    const callbackTo = req.body.From || req.body.Caller || req.body.Called || req.body.To || '';
+    if (
+      process.env.ENABLE_CALLBACK === 'true'
+      && twilioClient
+      && process.env.TWILIO_PHONE_NUMBER
+      && callbackTo
+      && ticket.ref
+    ) {
+      const spokenRef = ticket.ref.split('').join(' ');
+      const pollyTwiML = `<Response><Say voice="Polly.Aditi">Your complaint has been registered. Your ticket number is ${spokenRef}. You can track your complaint using this reference. Thank you.</Say></Response>`;
+      const aliceTwiML = `<Response><Say voice="alice">Your complaint has been registered. Your ticket number is ${spokenRef}. You can track your complaint using this reference. Thank you.</Say></Response>`;
+      try {
+        twilioClient.calls.create({
+          to: callbackTo,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          twiml: pollyTwiML
+        }).catch((callbackError) => {
+          (req.log || logger).warn({ err: callbackError, to: callbackTo }, 'Polly callback call failed, retrying with alice voice');
+          twilioClient.calls.create({
+            to: callbackTo,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            twiml: aliceTwiML
+          }).catch((fallbackCallbackError) => {
+            (req.log || logger).error({ err: fallbackCallbackError, to: callbackTo }, 'Callback call failed');
+          });
+        });
+      } catch (callbackSetupError) {
+        (req.log || logger).error({ err: callbackSetupError, to: callbackTo }, 'Failed to initiate callback call');
+      }
+    }
 
     if (twilioClient && phone) {
       // SMS notification

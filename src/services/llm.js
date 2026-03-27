@@ -2,6 +2,7 @@ const { GoogleGenAI } = require('@google/genai');
 const logger = require('../utils/logger');
 
 const MODEL_NAME = 'gemini-2.0-flash';
+const ALLOWED_TICKET_CATEGORIES = ['Road', 'Water Supply', 'Electricity', 'Sanitation', 'Public Safety', 'Other'];
 
 async function transcribeAudio(recordingUrl) {
   // Twilio transcription is handled via /transcribe callback
@@ -11,7 +12,7 @@ async function transcribeAudio(recordingUrl) {
 
 function fallbackIntent(transcript) {
   return {
-    category: 'other',
+    category: 'Other',
     subcategory: 'general',
     ward: null,
     summary: String(transcript || '').slice(0, 100),
@@ -59,13 +60,15 @@ async function extractIntent(transcript) {
   const prompt = `
 You are a civic grievance intake assistant for Indian municipalities.
 Extract from the caller transcript:
-- category: one of [water, road, electricity, sanitation, other]
+- category: one of [Road, Water Supply, Electricity, Sanitation, Public Safety, Other]
 - subcategory: brief descriptor
 - ward: ward name or number if mentioned, else null
 - summary: one sentence summary in English
 - urgency: low/medium/high based on language used
 - language_detected: hindi/english/hinglish
-Return ONLY valid JSON, no explanation, no markdown.
+Return ONLY a valid JSON object in this exact shape:
+{"category":"Road","subcategory":"string","ward":null,"summary":"string","urgency":"medium","language_detected":"hinglish"}
+Do not return markdown, code fences, or extra text.
 
 Transcript:
 ${transcript}
@@ -86,16 +89,39 @@ ${transcript}
     }
 
     const cleaned = rawText
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/, '');
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+    const jsonPayload = jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart
+      ? cleaned.slice(jsonStart, jsonEnd + 1)
+      : cleaned;
 
+    let parsed;
     try {
-      return JSON.parse(cleaned);
+      parsed = JSON.parse(jsonPayload);
     } catch (parseError) {
       logger.error({ rawText, parseError: parseError.message, model: MODEL_NAME }, 'Failed to parse Gemini JSON response');
-      return fallbackIntent(transcript);
+      console.error('Gemini category fallback triggered: failed to parse JSON response');
+      const fallback = fallbackIntent(transcript);
+      fallback.category = 'Other';
+      return fallback;
     }
+
+    const aiCategory = String(parsed?.category || '').trim();
+    const matchedCategory = ALLOWED_TICKET_CATEGORIES.find(
+      (category) => category.toLowerCase() === aiCategory.toLowerCase()
+    );
+    if (!matchedCategory) {
+      console.error(`Gemini category fallback triggered: invalid category "${aiCategory || 'EMPTY'}"`);
+    }
+
+    return {
+      ...fallbackIntent(transcript),
+      ...(parsed && typeof parsed === 'object' ? parsed : {}),
+      category: matchedCategory || 'Other'
+    };
   } catch (error) {
     logger.error({ err: error, model: MODEL_NAME, errorMessage: error.message, transcript: transcript.slice(0, 80) }, 'Gemini API call failed');
     return fallbackIntent(transcript);

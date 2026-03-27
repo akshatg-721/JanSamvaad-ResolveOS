@@ -2,7 +2,9 @@ const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
 const cors = require('cors');
+const compression = require('compression');
 const cron = require('node-cron');
+const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const { Server } = require('socket.io');
 const dotenv = require('dotenv');
@@ -46,6 +48,15 @@ const corsOptions = {
 const PORT = Number(process.env.PORT || 3000);
 app.set('io', io);
 setIo(io);
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: 'Too many requests, please try again later.' });
+  }
+});
 
 const voiceWebhookRouter = require('./src/webhooks/voice');
 const authRouter = require('./src/api/auth');
@@ -54,6 +65,7 @@ const evidenceRouter = require('./src/api/evidence');
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.use(compression());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use((req, res, next) => {
@@ -85,6 +97,9 @@ app.get('/health', async (req, res) => {
 });
 
 app.use('/', voiceWebhookRouter);
+if (process.env.NODE_ENV !== 'test') {
+  app.use('/api', apiLimiter);
+}
 app.use('/', authRouter);
 app.use('/', dashboardRouter);
 app.use('/', evidenceRouter);

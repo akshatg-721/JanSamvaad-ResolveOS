@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -57,7 +57,9 @@ export default function DashboardPage() {
   const [tickets] = useState(() => generateTickets(50))
   const [wardStats] = useState(() => generateWardStats())
   const [stats] = useState(() => generatePlatformStats())
-  const [activities] = useState(() => generateActivities(15))
+  const [activityNow, setActivityNow] = useState<number | null>(null)
+  const [activitySort, setActivitySort] = useState<'newest' | 'oldest' | 'critical' | 'type'>('newest')
+  const [activityFilter, setActivityFilter] = useState<'all' | 'breached' | 'resolved' | 'created' | 'updated'>('all')
   
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -69,6 +71,17 @@ export default function DashboardPage() {
   const [resolutionStatus, setResolutionStatus] = useState('Resolved')
   const [resolutionSummary, setResolutionSummary] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
+
+  useEffect(() => {
+    setActivityNow(Date.now())
+  }, [])
+
+  const activities = useMemo(() => {
+    if (activityNow === null) {
+      return []
+    }
+    return generateActivities(15, activityNow)
+  }, [activityNow])
 
   // Filter tickets
   const filteredTickets = useMemo(() => {
@@ -127,6 +140,48 @@ export default function DashboardPage() {
     setResolutionSummary('')
     setEvidenceUrl('')
   }
+
+  const visibleActivities = useMemo(() => {
+    const filtered = activities.filter((activity) => {
+      if (activityFilter === 'all') return true
+      if (activityFilter === 'updated') return activity.type === 'updated' || activity.type === 'assigned'
+      return activity.type === activityFilter
+    })
+
+    const sorted = [...filtered]
+    if (activitySort === 'newest') {
+      sorted.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    } else if (activitySort === 'oldest') {
+      sorted.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    } else if (activitySort === 'critical') {
+      const criticalPriority: Record<string, number> = {
+        breached: 4,
+        resolved: 3,
+        updated: 2,
+        assigned: 2,
+        created: 1
+      }
+      sorted.sort((a, b) => {
+        const diff = (criticalPriority[b.type] || 0) - (criticalPriority[a.type] || 0)
+        if (diff !== 0) return diff
+        return b.timestamp.getTime() - a.timestamp.getTime()
+      })
+    } else {
+      const typeOrder: Record<string, number> = {
+        breached: 0,
+        resolved: 1,
+        updated: 2,
+        assigned: 2,
+        created: 3
+      }
+      sorted.sort((a, b) => {
+        const diff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99)
+        if (diff !== 0) return diff
+        return b.timestamp.getTime() - a.timestamp.getTime()
+      })
+    }
+    return sorted
+  }, [activities, activityFilter, activitySort])
 
   return (
     <div className="space-y-6">
@@ -489,11 +544,48 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Recent Activity</CardTitle>
-              <LiveIndicator />
+              <div className="flex items-center gap-2">
+                <select
+                  value={activitySort}
+                  onChange={(event) => setActivitySort(event.target.value as 'newest' | 'oldest' | 'critical' | 'type')}
+                  className="h-7 rounded-md border border-border bg-background px-2 text-[11px] text-foreground outline-none"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="critical">Critical first</option>
+                  <option value="type">Type</option>
+                </select>
+                <LiveIndicator />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <ActivityFeed activities={activities} maxHeight="280px" />
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'breached', label: 'SLA Exceeded' },
+                { key: 'resolved', label: 'Resolved' },
+                { key: 'created', label: 'New Ticket' },
+                { key: 'updated', label: 'Status Update' }
+              ].map((chip) => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => setActivityFilter(chip.key as 'all' | 'breached' | 'resolved' | 'created' | 'updated')}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                    activityFilter === chip.key
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+            <div className="max-h-[280px] overflow-y-auto">
+              <ActivityFeed activities={visibleActivities} maxHeight="280px" />
+            </div>
           </CardContent>
         </Card>
 

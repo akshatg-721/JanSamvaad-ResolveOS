@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { mockComplaints, type MockComplaint, type ComplaintSeverity } from '@/lib/mock-complaints'
 
 type LeafletNS = any
-type MarkerClusterNS = any
 
 const severityLabels: Array<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'> = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 const severityColor: Record<ComplaintSeverity, string> = {
@@ -49,7 +48,6 @@ export default function GISMapClient() {
   const heatLayerRef = useRef<any>(null)
   const wardLayerRef = useRef<any>(null)
   const leafletRef = useRef<LeafletNS | null>(null)
-  const markerClusterRef = useRef<MarkerClusterNS | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL')
   const [heatmapOn, setHeatmapOn] = useState(false)
@@ -82,12 +80,13 @@ export default function GISMapClient() {
   useEffect(() => {
     let cancelled = false
     async function loadDeps() {
-      const L = await import('leaflet')
+      const leafletModule = await import('leaflet')
+      const L = (leafletModule as any).default || leafletModule
+      ;(globalThis as any).L = L
       await import('leaflet.markercluster')
       await import('leaflet.heat')
       if (cancelled) return
-      leafletRef.current = L
-      markerClusterRef.current = L
+      leafletRef.current = (globalThis as any).L || L
       setLoaded(true)
     }
     loadDeps()
@@ -166,7 +165,7 @@ export default function GISMapClient() {
   }, [loaded])
 
   useEffect(() => {
-    if (!loaded || !mapInstanceRef.current || !leafletRef.current || !markerClusterRef.current) return
+    if (!loaded || !mapInstanceRef.current || !leafletRef.current) return
     const map = mapInstanceRef.current
     const L = leafletRef.current
 
@@ -198,21 +197,23 @@ export default function GISMapClient() {
       return
     }
 
-    const clusterGroup = (L as any).markerClusterGroup({
-      showCoverageOnHover: false,
-      spiderfyOnMaxZoom: true,
-      maxClusterRadius: 42,
-      iconCreateFunction: (cluster: any) => {
-        const markers = cluster.getAllChildMarkers()
-        const maxRank = markers.reduce((rank: number, marker: any) => Math.max(rank, marker.options.severityRank || 1), 1)
-        const color = maxRank >= 4 ? '#EF4444' : maxRank === 3 ? '#F97316' : maxRank === 2 ? '#EAB308' : '#22C55E'
-        return L.divIcon({
-          html: `<div class="cluster-pill" style="background:${color}">${cluster.getChildCount()}</div>`,
-          className: 'custom-cluster-icon',
-          iconSize: [40, 40]
-        })
-      }
-    })
+    const clusterGroup = typeof (L as any).markerClusterGroup === 'function'
+      ? (L as any).markerClusterGroup({
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+        maxClusterRadius: 42,
+        iconCreateFunction: (cluster: any) => {
+          const markers = cluster.getAllChildMarkers()
+          const maxRank = markers.reduce((rank: number, marker: any) => Math.max(rank, marker.options.severityRank || 1), 1)
+          const color = maxRank >= 4 ? '#EF4444' : maxRank === 3 ? '#F97316' : maxRank === 2 ? '#EAB308' : '#22C55E'
+          return L.divIcon({
+            html: `<div class="cluster-pill" style="background:${color}">${cluster.getChildCount()}</div>`,
+            className: 'custom-cluster-icon',
+            iconSize: [40, 40]
+          })
+        }
+      })
+      : L.layerGroup()
 
     filteredComplaints.forEach((item: MockComplaint) => {
       const sev = normalizeSeverity(item.severity)

@@ -147,7 +147,7 @@ export default function DashboardPage() {
     }
 
     fetchTickets()
-    const interval = setInterval(fetchTickets, 30000)
+    const interval = setInterval(fetchTickets, 10000)
     return () => {
       isMounted = false
       clearInterval(interval)

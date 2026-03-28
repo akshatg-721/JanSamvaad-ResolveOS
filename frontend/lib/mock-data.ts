@@ -73,18 +73,21 @@ const descriptions = [
 // Generate mock tickets
 export function generateTickets(count: number = 50): Ticket[] {
   const tickets: Ticket[] = []
-  const baseTime = new Date('2026-01-15T10:00:00Z').getTime()
+  const now = new Date()
   
   for (let i = 0; i < count; i++) {
-    const createdAt = new Date(baseTime - seeded(i + 1) * 7 * 24 * 60 * 60 * 1000)
+    const minsAgo = Math.floor(Math.random() * 120) + 5
+    const createdAt = new Date(now.getTime() - minsAgo * 60 * 1000)
     const status = pickBySeed(statuses, i + 11)
     const severity = pickBySeed(severities, i + 21)
     const wardId = Math.floor(seeded(i + 31) * 20) + 1
     const phone = `98${String(10000000 + Math.floor(seeded(i + 41) * 90000000)).padStart(8, '0')}`
     
-    // Calculate SLA deadline based on severity
-    const slaHours = severity === 'CRITICAL' ? 4 : severity === 'HIGH' ? 12 : severity === 'MEDIUM' ? 24 : 48
-    const slaDeadline = new Date(createdAt.getTime() + slaHours * 60 * 60 * 1000)
+    const slaHours = Math.floor(Math.random() * 70) + 2
+    const isBreached = Math.random() < 0.2
+    const slaDeadline = isBreached
+      ? new Date(now.getTime() - Math.random() * 3 * 60 * 60 * 1000)
+      : new Date(now.getTime() + slaHours * 60 * 60 * 1000)
     
     const ticket: Ticket = {
       id: `ticket-${i + 1}`,

@@ -54,7 +54,8 @@ import {
 } from 'recharts'
 
 export default function DashboardPage() {
-  const [tickets] = useState(() => generateTickets(50))
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [loading, setLoading] = useState(true)
   const [wardStats] = useState(() => generateWardStats())
   const [stats] = useState(() => generatePlatformStats())
   const [activityNow, setActivityNow] = useState<number | null>(null)
@@ -71,6 +72,87 @@ export default function DashboardPage() {
   const [resolutionStatus, setResolutionStatus] = useState('Resolved')
   const [resolutionSummary, setResolutionSummary] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
+
+  const mapTicket = (t: any): Ticket => {
+    const severityMap: Record<string, TicketSeverity> = {
+      High: 'HIGH',
+      Medium: 'MEDIUM',
+      Low: 'LOW',
+      CRITICAL: 'CRITICAL',
+      HIGH: 'HIGH',
+      MEDIUM: 'MEDIUM',
+      LOW: 'LOW'
+    }
+    const statusMap: Record<string, TicketStatus> = {
+      open: 'Open',
+      closed: 'Resolved',
+      Open: 'Open',
+      Resolved: 'Resolved',
+      'In-Progress': 'In-Progress',
+      'SLA Breached': 'SLA Breached'
+    }
+    const wardId = Number(t.ward_id)
+    const hasWard = Number.isFinite(wardId) && wardId > 0
+    return {
+      id: String(t.ref || t.id),
+      ref: String(t.ref || t.id || ''),
+      category: (t.category || 'General Complaint') as Ticket['category'],
+      severity: severityMap[String(t.severity)] || 'LOW',
+      status: statusMap[String(t.status)] || 'Open',
+      ward: hasWard ? `Ward ${wardId}` : 'Unknown',
+      wardId: hasWard ? wardId : 0,
+      phone: String(t.phone || ''),
+      maskedPhone: String(t.phone || ''),
+      createdAt: t.created_at ? new Date(t.created_at) : new Date(),
+      slaDeadline: t.sla_deadline ? new Date(t.sla_deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000),
+      description: 'Voice complaint received',
+      aiAnalysis: 'AI analysis will be available shortly.',
+      suggestedActions: ['Review complaint details', 'Assign to ward operations team', 'Track SLA compliance'],
+      location: {
+        lat: 28.6139,
+        lng: 77.2090,
+        address: hasWard ? `Ward ${wardId}` : 'Location unavailable'
+      },
+      evidenceUrl: t.evidence_url || undefined,
+      closedAt: t.closed_at ? new Date(t.closed_at) : undefined
+    }
+  }
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchTickets = async () => {
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tickets`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (!res.ok) throw new Error('Failed to fetch tickets')
+        const data = await res.json()
+        if (isMounted) {
+          setTickets((data.tickets || data).map(mapTicket))
+        }
+      } catch (err) {
+        console.error('[dashboard] ticket fetch failed:', err)
+        if (isMounted) {
+          setTickets(generateTickets(50))
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchTickets()
+    const interval = setInterval(fetchTickets, 10000)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [])
 
   useEffect(() => {
     setActivityNow(Date.now())
@@ -310,7 +392,13 @@ export default function DashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTickets.map((ticket) => (
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                          Loading tickets...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredTickets.map((ticket) => (
                       <TableRow 
                         key={ticket.id}
                         className={cn(

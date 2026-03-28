@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'JanSamvaad ResolveOS | Citizen Grievance Redressal System',
+  title: 'JanSamvaad | Citizen Grievance Redressal System',
   description: 'Government of India - Ministry of Housing & Urban Affairs. Voice-first AI-powered citizen grievance redressal platform for Indian civic governance.',
   generator: 'JanSamvaad',
   keywords: ['grievance', 'citizen', 'government', 'India', 'civic', 'complaint', 'redressal'],

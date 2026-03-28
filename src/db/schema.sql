@@ -22,8 +22,16 @@ CREATE TABLE IF NOT EXISTS tickets (
   sla_deadline TIMESTAMPTZ,
   evidence_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  closed_at TIMESTAMPTZ
+  closed_at TIMESTAMPTZ,
+  citizen_rating SMALLINT DEFAULT NULL CHECK (citizen_rating BETWEEN 1 AND 5),
+  citizen_feedback TEXT DEFAULT NULL
 );
+
+ALTER TABLE tickets
+ADD COLUMN IF NOT EXISTS citizen_rating SMALLINT DEFAULT NULL CHECK (citizen_rating BETWEEN 1 AND 5);
+
+ALTER TABLE tickets
+ADD COLUMN IF NOT EXISTS citizen_feedback TEXT DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS call_consents (
   id SERIAL PRIMARY KEY,
@@ -33,6 +41,7 @@ CREATE TABLE IF NOT EXISTS call_consents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
+CREATE INDEX IF NOT EXISTS idx_tickets_category ON tickets(category);
 CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tickets_contact_id ON tickets(contact_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_sla_deadline ON tickets(sla_deadline);

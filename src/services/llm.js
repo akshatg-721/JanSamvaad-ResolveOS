@@ -1,7 +1,8 @@
 const { GoogleGenAI } = require('@google/genai');
 const logger = require('../utils/logger');
 
-const MODEL_NAME = 'gemini-2.0-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const ALLOWED_TICKET_CATEGORIES = ['Road', 'Water Supply', 'Electricity', 'Sanitation', 'Public Safety', 'Other'];
 
 async function transcribeAudio(recordingUrl) {
   // Twilio transcription is handled via /transcribe callback
@@ -10,11 +11,27 @@ async function transcribeAudio(recordingUrl) {
 }
 
 function fallbackIntent(transcript) {
+  const safeTranscript = String(transcript || '');
+  const normalizedTranscript = safeTranscript.toLowerCase();
+  const wardMatch = safeTranscript.match(/ward\s*(\d+)/i);
+  const ward = wardMatch ? wardMatch[1] : null;
+  let category = 'Other';
+  if (/(garbage|trash|waste|sewage|drain|sanitation)/i.test(normalizedTranscript)) {
+    category = 'Sanitation';
+  } else if (/(water|leak|pipeline|tap)/i.test(normalizedTranscript)) {
+    category = 'Water Supply';
+  } else if (/(power|electric|streetlight|street light|voltage)/i.test(normalizedTranscript)) {
+    category = 'Electricity';
+  } else if (/(road|pothole|traffic|street)/i.test(normalizedTranscript)) {
+    category = 'Road';
+  } else if (/(theft|crime|unsafe|safety|assault)/i.test(normalizedTranscript)) {
+    category = 'Public Safety';
+  }
   return {
-    category: 'other',
+    category,
     subcategory: 'general',
-    ward: null,
-    summary: String(transcript || '').slice(0, 100),
+    ward,
+    summary: safeTranscript.slice(0, 100),
     urgency: 'medium',
     language_detected: 'hinglish'
   };
@@ -49,9 +66,9 @@ function fallbackResolutionSummary(tickets, reason = 'model_unavailable') {
 }
 
 async function extractIntent(transcript) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    logger.warn('No GEMINI_API_KEY or GOOGLE_API_KEY set — using fallback intent');
+    logger.warn('No GEMINI_API_KEY set — using fallback intent');
     return fallbackIntent(transcript);
   }
 
@@ -59,13 +76,15 @@ async function extractIntent(transcript) {
   const prompt = `
 You are a civic grievance intake assistant for Indian municipalities.
 Extract from the caller transcript:
-- category: one of [water, road, electricity, sanitation, other]
+- category: one of [Road, Water Supply, Electricity, Sanitation, Public Safety, Other]
 - subcategory: brief descriptor
 - ward: ward name or number if mentioned, else null
 - summary: one sentence summary in English
 - urgency: low/medium/high based on language used
 - language_detected: hindi/english/hinglish
-Return ONLY valid JSON, no explanation, no markdown.
+Return ONLY a valid JSON object in this exact shape:
+{"category":"Road","subcategory":"string","ward":null,"summary":"string","urgency":"medium","language_detected":"hinglish"}
+Do not return markdown, code fences, or extra text.
 
 Transcript:
 ${transcript}
@@ -73,31 +92,54 @@ ${transcript}
 
   try {
     const result = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: MODEL,
       contents: prompt
     });
 
     const rawText = result.text ? result.text.trim() : '';
-    logger.info({ model: MODEL_NAME, rawTextLength: rawText.length }, 'Gemini response received');
+    logger.info({ model: MODEL, rawTextLength: rawText.length }, 'Gemini response received');
 
     if (!rawText) {
-      logger.warn({ model: MODEL_NAME, transcript: transcript.slice(0, 80) }, 'Gemini returned empty response');
+      logger.warn({ model: MODEL, transcript: transcript.slice(0, 80) }, 'Gemini returned empty response');
       return fallbackIntent(transcript);
     }
 
     const cleaned = rawText
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/, '');
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+    const jsonPayload = jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart
+      ? cleaned.slice(jsonStart, jsonEnd + 1)
+      : cleaned;
 
+    let parsed;
     try {
-      return JSON.parse(cleaned);
+      parsed = JSON.parse(jsonPayload);
     } catch (parseError) {
-      logger.error({ rawText, parseError: parseError.message, model: MODEL_NAME }, 'Failed to parse Gemini JSON response');
-      return fallbackIntent(transcript);
+      logger.error({ rawText, parseError: parseError.message, model: MODEL }, 'Failed to parse Gemini JSON response');
+      console.error('Gemini category fallback triggered: failed to parse JSON response');
+      const fallback = fallbackIntent(transcript);
+      fallback.category = 'Other';
+      return fallback;
     }
+
+    const aiCategory = String(parsed?.category || '').trim();
+    const matchedCategory = ALLOWED_TICKET_CATEGORIES.find(
+      (category) => category.toLowerCase() === aiCategory.toLowerCase()
+    );
+    if (!matchedCategory) {
+      console.error(`Gemini category fallback triggered: invalid category "${aiCategory || 'EMPTY'}"`);
+    }
+
+    return {
+      ...fallbackIntent(transcript),
+      ...(parsed && typeof parsed === 'object' ? parsed : {}),
+      category: matchedCategory || 'Other'
+    };
   } catch (error) {
-    logger.error({ err: error, model: MODEL_NAME, errorMessage: error.message, transcript: transcript.slice(0, 80) }, 'Gemini API call failed');
+    logger.error({ err: error, model: MODEL, errorMessage: error.message, transcript: transcript.slice(0, 80) }, 'Gemini API call failed');
     return fallbackIntent(transcript);
   }
 }
@@ -118,9 +160,9 @@ async function generateResolutionSummary(tickets) {
     return fallbackResolutionSummary([], 'no_open_tickets');
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    logger.warn('No GEMINI_API_KEY or GOOGLE_API_KEY set — using fallback AI resolution summary');
+    logger.warn('No GEMINI_API_KEY set — using fallback AI resolution summary');
     return fallbackResolutionSummary(safeTickets, 'missing_api_key');
   }
 
@@ -151,7 +193,7 @@ ${JSON.stringify(safeTickets)}
 
   try {
     const result = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: MODEL,
       contents: prompt
     });
     const rawText = result.text ? result.text.trim() : '';
@@ -198,7 +240,7 @@ ${JSON.stringify(safeTickets)}
   }
 }
 
-async function askResolveOSAssistant(userMessage, tickets) {
+async function askJanSamvaadAssistant(userMessage, tickets) {
   const safeMessage = String(userMessage || '').trim();
   const safeTickets = Array.isArray(tickets)
     ? tickets.map((ticket) => ({
@@ -211,7 +253,7 @@ async function askResolveOSAssistant(userMessage, tickets) {
     }))
     : [];
   const fallback = {
-    response: 'ResolveOS Assistant is temporarily unavailable. Please try again in a moment.',
+    response: 'JanSamvaad Assistant is temporarily unavailable. Please try again in a moment.',
     fallback: true
   };
 
@@ -222,18 +264,18 @@ async function askResolveOSAssistant(userMessage, tickets) {
     };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    logger.warn('No GEMINI_API_KEY or GOOGLE_API_KEY set — ResolveOS Assistant fallback');
+    logger.warn('No GEMINI_API_KEY set — JanSamvaad Assistant fallback');
     return fallback;
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const prompt = `You are ResolveOS Assistant, an expert municipal operations advisor for Indian city corporations. The operator has asked: "${safeMessage}". Here is the current open ticket data for context: ${JSON.stringify(safeTickets)}. Provide clear, actionable, concise guidance in plain text. Be specific about steps, who to notify, and estimated timelines where relevant. Do not output JSON.`;
+  const prompt = `You are JanSamvaad Assistant, an expert municipal operations advisor for Indian city corporations. The operator has asked: "${safeMessage}". Here is the current open ticket data for context: ${JSON.stringify(safeTickets)}. Provide clear, actionable, concise guidance in plain text. Be specific about steps, who to notify, and estimated timelines where relevant. Do not output JSON.`;
 
   try {
     const result = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: MODEL,
       contents: prompt
     });
     const text = String(result?.text || '').trim();
@@ -245,7 +287,7 @@ async function askResolveOSAssistant(userMessage, tickets) {
       fallback: false
     };
   } catch (error) {
-    logger.error({ err: error }, 'ResolveOS Assistant generation failed');
+    logger.error({ err: error }, 'JanSamvaad Assistant generation failed');
     return fallback;
   }
 }
@@ -254,5 +296,5 @@ module.exports = {
   transcribeAudio,
   extractIntent,
   generateResolutionSummary,
-  askResolveOSAssistant
+  askJanSamvaadAssistant
 };

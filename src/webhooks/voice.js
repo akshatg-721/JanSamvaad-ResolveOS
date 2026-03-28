@@ -29,11 +29,9 @@ function maskPhone(phone) {
 }
 
 function validateTwilioSignature(req, res, next) {
-  if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-    next();
-    return;
+  if (process.env.NODE_ENV !== 'production') {
+    return next();
   }
-
   if (!twilioAuthToken) {
     res.status(500).json({
       error: 'Server misconfiguration: TWILIO_AUTH_TOKEN not set'
@@ -53,7 +51,7 @@ function validateTwilioSignature(req, res, next) {
 
 router.use(['/voice', '/consent', '/lang', '/record', '/transcribe'], webhookLimiter, validateTwilioSignature);
 
-async function logConsent(phone, consented, requestLogger) {
+async function logConsent(phone, consented, requestLogger, res) {
   try {
     await pool.query(
       `INSERT INTO call_consents (phone, consented, timestamp)
@@ -62,6 +60,7 @@ async function logConsent(phone, consented, requestLogger) {
     );
   } catch (error) {
     (requestLogger || logger).error({ err: error, phone: maskPhone(phone) }, 'Failed to log consent');
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -113,7 +112,7 @@ router.post('/consent', async (req, res) => {
   const optedOut = digit === '2' || speechResult === 'STOP';
   const consented = digit === '1' && !optedOut;
 
-  await logConsent(phone, consented, req.log);
+  await logConsent(phone, consented, req.log, res);
 
   if (!consented) {
     response.say('Thank you, goodbye.');
@@ -182,7 +181,9 @@ router.post('/record', async (req, res) => {
 
 router.post('/transcribe', async (req, res) => {
   let transcript = (req.body.TranscriptionText || '').trim();
-  const phone = req.body.From || req.body.Called || '';
+  const rawPhone = req.body.From || req.body.Called || '';
+  const phone = String(rawPhone || '').replace(/\s+/g, '');
+  const normalizedPhone = phone && !phone.startsWith('+') ? `+${phone}` : phone;
 
   // SAFE IMPROVEMENT: Truncate input to avoid LLM abuse/huge payloads
   if (transcript.length > 1000) {
@@ -191,16 +192,35 @@ router.post('/transcribe', async (req, res) => {
 
   // SAFE IMPROVEMENT: Prevent silent/empty audio from creating useless demo tickets.
   if (transcript.length < 5) {
-    return res.status(200).send('');
+    return res.status(200).json({ success: false, message: 'Transcript too short' });
   }
 
   try {
     const grievanceIntent = await extractIntent(transcript);
+    let resolvedWardId = null;
+    const wardInput = grievanceIntent && grievanceIntent.ward !== null && grievanceIntent.ward !== undefined
+      ? String(grievanceIntent.ward).trim()
+      : '';
+    if (wardInput) {
+      try {
+        const { rows: wardRows } = await pool.query(
+          `SELECT id FROM wards WHERE LOWER(name) = LOWER($1)
+           OR id::text = $1
+           LIMIT 1`,
+          [wardInput]
+        );
+        if (wardRows.length > 0) {
+          resolvedWardId = wardRows[0].id;
+        }
+      } catch (wardLookupError) {
+        (req.log || logger).error({ err: wardLookupError, wardInput }, 'Ward lookup failed, falling back to null ward_id');
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
     const severityMap = { high: 'High', medium: 'Medium', low: 'Low' };
     const ticketPayload = {
-      category: grievanceIntent.category || 'other',
-      // SAFE IMPROVEMENT: Prevent Postgres foreign-key crashes by nullifying ward_id if AI hallucinates an unknown ward.
-      ward_id: null,
+      category: grievanceIntent.category || 'Other',
+      ward_id: resolvedWardId,
       severity: severityMap[String(grievanceIntent.urgency || '').toLowerCase()] || 'Medium'
     };
 
@@ -209,17 +229,18 @@ router.post('/transcribe', async (req, res) => {
       const { rows: dupes } = await pool.query(
         `SELECT id, ref FROM tickets
          WHERE category = $1
+           AND ward_id IS NOT DISTINCT FROM $2
            AND status = 'open'
-           AND created_at > NOW() - INTERVAL '24 hours'
+           AND created_at > NOW() - INTERVAL '10 minutes'
          LIMIT 1`,
-        [ticketPayload.category]
+        [ticketPayload.category, ticketPayload.ward_id]
       );
       if (dupes.length > 0) {
         (req.log || logger).info({ existingRef: dupes[0].ref, category: ticketPayload.category }, 'Duplicate ticket detected — skipping creation');
-        if (twilioClient && phone) {
+        if (twilioClient && normalizedPhone) {
           try {
             await twilioClient.messages.create({
-              to: phone,
+              to: normalizedPhone,
               from: process.env.TWILIO_PHONE_NUMBER,
               body: `JanSamvaad: A similar complaint (ref: ${dupes[0].ref}) is already being tracked in your area. We are working on it.`
             });
@@ -227,39 +248,86 @@ router.post('/transcribe', async (req, res) => {
             (req.log || logger).warn({ err: smsErr }, 'Failed to send duplicate notification SMS');
           }
         }
-        return res.status(200).send('');
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          existingRef: dupes[0].ref
+        });
       }
     } catch (dupeErr) {
       (req.log || logger).warn({ err: dupeErr }, 'Duplicate detection query failed — proceeding with ticket creation');
     }
 
-    const ticket = await createTicket(phone, ticketPayload);
+    const ticket = await createTicket(normalizedPhone, ticketPayload);
     (req.log || logger).info({ ticketRef: ticket.ref }, 'Ticket created from transcription');
+    const callbackRaw = req.body.From || req.body.Caller || req.body.Called || req.body.To || '';
+    const callbackToSanitized = String(callbackRaw || '').replace(/\s+/g, '');
+    const callbackTo = callbackToSanitized && !callbackToSanitized.startsWith('+') ? `+${callbackToSanitized}` : callbackToSanitized;
+    if (
+      process.env.ENABLE_CALLBACK === 'true'
+      && twilioClient
+      && process.env.TWILIO_PHONE_NUMBER
+      && callbackTo
+      && ticket.ref
+    ) {
+      const spokenRef = ticket.ref.split('').join(' ');
+      const pollyTwiML = `<Response><Say voice="Polly.Aditi">Your complaint has been registered. Your ticket number is ${spokenRef}. You can track your complaint using this reference. Thank you.</Say></Response>`;
+      const aliceTwiML = `<Response><Say voice="alice">Your complaint has been registered. Your ticket number is ${spokenRef}. You can track your complaint using this reference. Thank you.</Say></Response>`;
+      try {
+        twilioClient.calls.create({
+          to: callbackTo,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          twiml: pollyTwiML
+        }).catch((callbackError) => {
+          (req.log || logger).warn({ err: callbackError, to: callbackTo }, 'Polly callback call failed, retrying with alice voice');
+          twilioClient.calls.create({
+            to: callbackTo,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            twiml: aliceTwiML
+          }).catch((fallbackCallbackError) => {
+            (req.log || logger).error({ err: fallbackCallbackError, to: callbackTo }, 'Callback call failed');
+          });
+        });
+      } catch (callbackSetupError) {
+        (req.log || logger).error({ err: callbackSetupError, to: callbackTo }, 'Failed to initiate callback call');
+      }
+    }
 
-    if (twilioClient && phone) {
-      // SMS notification
-      await twilioClient.messages.create({
-        to: phone,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        body: `JanSamvaad: Your complaint has been registered. Ticket ref: ${ticket.ref}. We will resolve it within SLA.`
-      });
-
-      // WhatsApp notification (Polish 1)
+    if (twilioClient && normalizedPhone) {
       try {
         await twilioClient.messages.create({
-          to: `whatsapp:${phone}`,
+          to: normalizedPhone,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          body: `JanSamvaad: Your complaint has been registered. Ticket ref: ${ticket.ref}. We will resolve it within SLA.`
+        });
+      } catch (smsErr) {
+        (req.log || logger).warn({ err: smsErr }, 'SMS notification failed');
+      }
+
+      try {
+        await twilioClient.messages.create({
+          to: `whatsapp:${normalizedPhone}`,
           from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
-          body: `🗣️ JanSamvaad ResolveOS\nYour complaint has been registered.\nTicket: ${ticket.ref}\nCategory: ${ticket.category}\nWe will resolve it within SLA.\n\nTrack: ${process.env.APP_BASE_URL || 'http://localhost'}/track`
+          body: `🗣️ JanSamvaad\nYour complaint has been registered.\nTicket: ${ticket.ref}\nCategory: ${ticket.category}\nWe will resolve it within SLA.\n\nTrack: ${process.env.APP_BASE_URL || 'http://localhost'}/track`
         });
       } catch (waErr) {
         (req.log || logger).warn({ err: waErr }, 'WhatsApp notification failed');
       }
     }
+    return res.status(200).json({
+      success: true,
+      duplicate: false,
+      ticketRef: ticket.ref,
+      category: ticket.category,
+      ward_id: ticket.ward_id
+    });
   } catch (error) {
     (req.log || logger).error({ err: error }, 'Transcription callback failed');
+    return res.status(500).json({
+      success: false,
+      error: 'Transcription callback failed'
+    });
   }
-
-  res.status(200).send('');
 });
 
 module.exports = router;

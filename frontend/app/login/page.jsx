@@ -74,12 +74,15 @@ export default function LoginPage() {
           </Link>
         </div>
         <div className="relative z-10 px-14 pb-20">
-          <div className="mb-14 flex items-center gap-4">
-            <IndiaFlag size="lg" />
-            <div>
-              <p className="text-xs tracking-[0.2em] uppercase text-white/70">Government of India</p>
-              <h2 className="text-2xl font-semibold mt-1">JanSamvaad ResolveOS</h2>
-              <p className="text-sm text-white/75">Ministry of Housing & Urban Affairs</p>
+          <div className="mb-14">
+            <img src="/logo-icon.png" alt="JanSamvaad logo" className="h-12 w-auto mb-4" />
+            <div className="flex items-center gap-4">
+              <IndiaFlag size="lg" />
+              <div>
+                <p className="text-xs tracking-[0.2em] uppercase text-white/70">Government of India</p>
+                <h2 className="text-2xl font-semibold mt-1">JanSamvaad</h2>
+                <p className="text-sm text-white/75">Ministry of Housing & Urban Affairs</p>
+              </div>
             </div>
           </div>
           <p className="max-w-md text-2xl font-semibold leading-relaxed text-white">
@@ -99,9 +102,7 @@ export default function LoginPage() {
           <div className="max-w-md w-full">
             <div className="mb-6">
               <div className="inline-flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-blue-700" />
-                </div>
+                <img src="/logo-icon.png" alt="JanSamvaad logo" className="h-10 w-auto" />
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900">Operator Login</h1>
                   <p className="text-sm text-slate-500">Municipal Operations Access Portal</p>

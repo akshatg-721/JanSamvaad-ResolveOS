@@ -47,7 +47,7 @@ function GovFooter() {
           <div className="text-center md:text-left">
             <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
               <span className="text-xl">🇮🇳</span>
-              <span className="text-base font-bold text-white">JanSamvaad ResolveOS</span>
+              <span className="text-base font-bold text-white">JanSamvaad</span>
             </div>
             <p className="text-xs text-[#FF9933]">Ministry of Housing & Urban Affairs | Government of India</p>
           </div>
@@ -62,7 +62,7 @@ function GovFooter() {
         </div>
         <div className="border-t border-white/5 pt-6 text-center">
           <p className="text-xs text-[#8A9BB5]">
-            © 2026 JanSamvaad ResolveOS | Government of India
+            © 2026 JanSamvaad | Government of India
           </p>
           <p className="text-xs text-[#8A9BB5]/60 mt-1">
             Powered by National Informatics Centre (NIC) | Best viewed in Chrome, Firefox, Edge | Screen Reader Compatible
@@ -118,16 +118,39 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0A1628] text-white" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A1628] px-8 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <img src="/logo-icon.png" alt="JanSamvaad logo" className="h-8 w-auto" />
+            <span className="text-white font-bold text-lg">JanSamvaad</span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/track"
+              className="px-4 py-2 rounded-lg border border-white/20 text-white font-semibold text-xs hover:bg-white/5 transition-all"
+            >
+              🔍 Track Your Complaint
+            </Link>
+            <Link
+              href="/public"
+              className="px-4 py-2 rounded-lg border border-white/20 text-white font-semibold text-xs hover:bg-white/5 transition-all"
+            >
+              📊 Public Data
+            </Link>
+            <Link
+              href="/login"
+              className="px-4 py-2 rounded-lg border border-white/20 text-white font-semibold text-xs hover:bg-white/5 transition-all"
+            >
+              👤 Operator Login
+            </Link>
+          </div>
+        </div>
+      </nav>
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0" style={{
           background: 'radial-gradient(ellipse at 50% 30%, rgba(255,153,51,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, rgba(19,136,8,0.04) 0%, transparent 50%)'
         }} />
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto pt-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#FF9933]/20 bg-[#FF9933]/5 mb-8">
-            <span>🇮🇳</span>
-            <span className="text-xs text-[#FF9933] font-medium">Official Grievance Redressal System — Government of India</span>
-          </div>
-
+        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto pt-24">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4">
             <span lang="hi" className="block text-[#FF9933]">नागरिक शिकायत निवारण प्रणाली</span>
           </h1>
@@ -147,24 +170,6 @@ export default function LandingPage() {
             >
               📞 Register Grievance — Call Now
             </a>
-            <Link
-              href="/track"
-              className="px-8 py-3.5 rounded-lg border border-white/20 text-white font-semibold text-sm hover:bg-white/5 transition-all"
-            >
-              🔍 Track Your Complaint
-            </Link>
-            <Link
-              href="/public"
-              className="px-8 py-3.5 rounded-lg border border-white/20 text-white font-semibold text-sm hover:bg-white/5 transition-all"
-            >
-              📊 Public Data
-            </Link>
-            <Link
-              href="/login"
-              className="px-8 py-3.5 rounded-lg border border-white/20 text-white font-semibold text-sm hover:bg-white/5 transition-all"
-            >
-              👤 Operator Login
-            </Link>
           </div>
           <p className="text-xs text-[#8A9BB5]">
             Toll-Free: +1 570 630 8042 | Available 24×7 | Hindi & English

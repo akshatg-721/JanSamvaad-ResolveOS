@@ -21,5 +21,8 @@ jobs:
           script: |
             cd ~/JanSamvaad-ResolveOS
             git pull origin main --rebase
+            export NODE_ENV=production
+            export ENABLE_CALLBACK=true
+            # GEMINI_API_KEY must be set manually in GCP Secret Manager or Cloud Run env vars
             sudo docker compose build backend --no-cache
             sudo docker compose up -d backend postgres

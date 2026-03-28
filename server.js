@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
@@ -7,14 +9,12 @@ const cron = require('node-cron');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const { Server } = require('socket.io');
-const dotenv = require('dotenv');
 const pool = require('./src/db');
 const { setIo } = require('./src/crm/ticket');
 const logger = require('./src/utils/logger');
 
-dotenv.config();
-
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const allowedOrigins = [
   'https://jansamvaad-resolveos.vercel.app',
@@ -63,11 +63,11 @@ const authRouter = require('./src/api/auth');
 const dashboardRouter = require('./src/api/dashboard');
 const evidenceRouter = require('./src/api/evidence');
 
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use(compression());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
 app.use((req, res, next) => {
   const requestId = crypto.randomUUID();
   req.requestId = requestId;
@@ -90,7 +90,7 @@ app.get('/health', async (req, res) => {
     version: '1.0.0',
     services: {
       database: dbStatus,
-      gemini: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY ? 'configured' : 'not_configured',
+      gemini: process.env.GEMINI_API_KEY ? 'configured' : 'not_configured',
       twilio: process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN ? 'configured' : 'not_configured'
     }
   });
@@ -191,7 +191,7 @@ if (process.env.ENABLE_SLA_CRON !== 'false' && process.env.NODE_ENV !== 'test') 
 
 function startServer() {
   return server.listen(PORT, () => {
-    logger.info({ port: PORT }, 'JanSamvaad ResolveOS server listening');
+    logger.info({ port: PORT }, 'JanSamvaad server listening');
 
     // Pre-warm Gemini AI on startup (Reliability 1)
     setTimeout(async () => {

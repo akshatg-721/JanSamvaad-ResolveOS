@@ -470,7 +470,7 @@ function TransparencyContent() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <IndiaFlag size="sm" />
-              <span className="text-sm">JanSamvaad ResolveOS - Government of India</span>
+              <span className="text-sm">JanSamvaad - Government of India</span>
             </div>
             <div className="flex items-center gap-4 text-xs text-white/60">
               <Link href="/" className="hover:text-white">Home</Link>

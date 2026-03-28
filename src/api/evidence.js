@@ -141,6 +141,7 @@ router.post('/api/tickets/:id/resolve', authenticateToken, async (req, res) => {
     } catch (smsError) {
       // SAFE IMPROVEMENT: Catch SMS error without rolling back DB transaction so Demo UI updates to 'closed' smoothly
       (req.log || logger).warn({ err: smsError, ticketId }, 'Failed to send SMS, but ticket resolved successfully');
+      return res.status(500).json({ error: 'Internal server error' });
     }
 
     await dbClient.query('COMMIT');

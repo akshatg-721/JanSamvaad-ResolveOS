@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const authenticateToken = require('../middleware/authenticateToken');
 const logger = require('../utils/logger');
-const { generateResolutionSummary, askResolveOSAssistant } = require('../services/llm');
+const { generateResolutionSummary, askJanSamvaadAssistant } = require('../services/llm');
 
 const router = express.Router();
 
@@ -52,8 +52,9 @@ router.get('/api/tickets', authenticateToken, async (req, res) => {
     }));
 
     res.json(tickets);
-  } catch (error) {
-    (req.log || logger).error({ err: error }, 'Failed to fetch tickets');
+  } catch (err) {
+    (req.log || logger).error({ err }, 'Failed to fetch tickets');
+    console.error('[dashboard]', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -134,10 +135,10 @@ const assistantChatHandler = async (req, res) => {
        ORDER BY t.created_at DESC
        LIMIT 5`
     );
-    const result = await askResolveOSAssistant(message, rows);
+    const result = await askJanSamvaadAssistant(message, rows);
     return res.json(result);
   } catch (error) {
-    (req.log || logger).error({ err: error }, 'ResolveOS Assistant chat failed');
+    (req.log || logger).error({ err: error }, 'JanSamvaad Assistant chat failed');
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

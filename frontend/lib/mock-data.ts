@@ -246,5 +246,5 @@ export const announcements = [
   'Ministry of Housing & Urban Affairs - Committed to citizen welfare',
   'Report civic issues 24/7 via voice call in Hindi or English',
   'Track your complaint status online with reference number',
-  'JanSamvaad ResolveOS - Powered by AI for faster resolution'
+  'JanSamvaad - Powered by AI for faster resolution'
 ]

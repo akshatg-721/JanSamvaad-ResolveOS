@@ -17,8 +17,10 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 const allowedOrigins = [
+  'https://jan-samvaad-resolve-os.vercel.app',
   'https://jansamvaad-resolveos.vercel.app',
   'https://jansamvaad-resolveos.vercel.app.',
+  'http://localhost:3000',
   'http://localhost:5173'
 ];
 

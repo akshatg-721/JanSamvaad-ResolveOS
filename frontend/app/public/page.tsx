@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-const API = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api').replace(/\/$/, '')
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://jan-samvaad.a.run.app').replace(/\/$/, '')
+const API = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`
 const CATEGORY_COLORS = ['#F97316', '#16A34A', '#0EA5E9', '#EF4444', '#F59E0B']
 type CategoryItem = { name: string; value: number }
 type WardItem = { ward: string; open: number }
@@ -103,6 +104,7 @@ export default function PublicPage() {
   const resolutionRate = Number(data?.resolution_rate || 0)
   const avgResolutionHours = Number(data?.avg_resolution_hours || 0)
   const activeIssues = Number(data?.open_count || 0)
+  const hasLoadedStats = Boolean(data && Object.keys(data).length > 0)
   const totalCategory = categoryData.reduce((sum: number, item: CategoryItem) => sum + item.value, 0) || 1
   const donutGradient = categoryData
     .map((item: CategoryItem, index: number, list: CategoryItem[]) => {
@@ -149,7 +151,7 @@ export default function PublicPage() {
           </div>
         </header>
 
-        {error ? (
+        {error && !hasLoadedStats ? (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>

@@ -68,10 +68,33 @@ export default function DashboardPage() {
   const [wardFilter, setWardFilter] = useState<string>('all')
   
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
   const [resolveModalOpen, setResolveModalOpen] = useState(false)
   const [resolutionStatus, setResolutionStatus] = useState('Resolved')
   const [resolutionSummary, setResolutionSummary] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
+
+  const fetchAiAnalysis = async (ticketRef: string) => {
+    setAiLoading(true)
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketRef}/analyze`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      )
+      if (!res.ok) throw new Error('Analysis failed')
+      const data = await res.json()
+      setSelectedTicket(prev => prev ? {
+        ...prev,
+        aiAnalysis: data.summaryText || data.summary || data.aiAnalysis || prev.aiAnalysis,
+        suggestedActions: (data.suggestedActions || []).map((a: any) => typeof a === 'string' ? a : `${a.title} — ${a.subtitle}`),
+      } : prev)
+    } catch (err) {
+      console.error('[AI analysis]', err)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const mapTicket = (t: any): Ticket => {
     const severityMap: Record<string, TicketSeverity> = {
@@ -106,8 +129,8 @@ export default function DashboardPage() {
       createdAt: t.created_at ? new Date(t.created_at) : new Date(),
       slaDeadline: t.sla_deadline ? new Date(t.sla_deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000),
       description: 'Voice complaint received',
-      aiAnalysis: 'AI analysis will be available shortly.',
-      suggestedActions: ['Review complaint details', 'Assign to ward operations team', 'Track SLA compliance'],
+      aiAnalysis: '',
+      suggestedActions: [],
       location: {
         lat: 28.6139,
         lng: 77.2090,
@@ -383,7 +406,7 @@ export default function DashboardPage() {
                 ) : filteredTickets.map((ticket) => (
                   <div
                     key={ticket.id}
-                    onClick={() => setSelectedTicket(ticket)}
+                    onClick={() => { setSelectedTicket(ticket); fetchAiAnalysis(ticket.ref || ticket.id); }}
                     className={cn(
                       "rounded-lg border p-4 space-y-2 cursor-pointer",
                       selectedTicket?.id === ticket.id && "bg-muted"
@@ -443,7 +466,7 @@ export default function DashboardPage() {
                           "cursor-pointer hover:bg-muted/50 transition-colors",
                           selectedTicket?.id === ticket.id && "bg-muted"
                         )}
-                        onClick={() => setSelectedTicket(ticket)}
+                        onClick={() => { setSelectedTicket(ticket); fetchAiAnalysis(ticket.ref || ticket.id); }}
                       >
                         <TableCell className="font-mono font-semibold text-primary">
                           {ticket.ref}
@@ -515,21 +538,36 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm">{selectedTicket.aiAnalysis}</p>
+                  {aiLoading ? (
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"/>
+                      Analyzing with Gemini AI...
+                    </div>
+                  ) : (
+                    <p className="text-sm">{selectedTicket.aiAnalysis || 'Select a ticket to generate analysis.'}</p>
+                  )}
                 </div>
                 
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Suggested Actions
                   </p>
-                  <ul className="space-y-2">
-                    {selectedTicket.suggestedActions?.map((action, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <ChevronRight className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span>{action}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {aiLoading ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-8 bg-muted rounded animate-pulse"/>
+                      ))}
+                    </div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {selectedTicket.suggestedActions?.map((action, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <ChevronRight className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{action}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t">

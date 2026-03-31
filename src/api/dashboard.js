@@ -116,6 +116,31 @@ router.get('/api/tickets/ai-summary', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/api/tickets/:ref/analyze', authenticateToken, async (req, res) => {
+  try {
+    const ref = req.params.ref.trim().toUpperCase();
+    const { rows } = await pool.query(
+      `SELECT
+         t.id, t.ref, t.category, t.severity, t.status,
+         t.created_at, t.closed_at, t.ward_id,
+         COALESCE(w.name, 'Ward ' || t.ward_id) AS ward_name
+       FROM tickets t
+       LEFT JOIN wards w ON w.id = t.ward_id
+       WHERE t.ref = $1
+       LIMIT 1`,
+      [ref]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+    const result = await generateResolutionSummary(rows);
+    res.json(result);
+  } catch (error) {
+    (req.log || logger).error({ err: error }, 'Failed to generate per-ticket AI analysis');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 const assistantChatHandler = async (req, res) => {
   try {
     const message = String(req.body?.message || '').trim();

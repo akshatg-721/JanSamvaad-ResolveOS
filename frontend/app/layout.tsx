@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -18,26 +17,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'JanSamvaad | Citizen Grievance Redressal System',
-  description: 'Government of India - Ministry of Housing & Urban Affairs. Voice-first AI-powered citizen grievance redressal platform for Indian civic governance.',
-  generator: 'JanSamvaad',
-  keywords: ['grievance', 'citizen', 'government', 'India', 'civic', 'complaint', 'redressal'],
-  authors: [{ name: 'Ministry of Housing & Urban Affairs' }],
+  description: 'AI-powered civic grievance redressal for New Delhi',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
 }
 
@@ -57,7 +41,6 @@ export default function RootLayout({
       <body className="font-sans antialiased min-h-screen bg-background text-foreground">
         {children}
         <Toaster richColors position="top-right" />
-        <Analytics />
       </body>
     </html>
   )

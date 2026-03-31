@@ -25,7 +25,7 @@ export default function LandingPage() {
     '87.3% Resolution Rate',
     'Ward 12 — 3 Open Issues',
     'Last ticket: 4 min ago',
-    'Powered by Gemini AI'
+    'AI-Assisted Workflows'
   ];
 
   return (
@@ -223,7 +223,7 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="mt-6 text-center text-xs text-[#94A3B8]/80">
-              Powered by Gemini AI · Twilio · Google Cloud
+              AI-assisted civic workflows · Twilio · Google Cloud
             </p>
           </div>
         </footer>

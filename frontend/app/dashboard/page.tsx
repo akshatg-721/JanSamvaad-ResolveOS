@@ -521,7 +521,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column - AI Panel & Analytics */}
-        <div className="flex h-fit flex-col gap-4 bg-transparent">
+        <div className="flex flex-col gap-4">
           {/* AI Assistant Panel */}
           {selectedTicket ? (
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm flex flex-col gap-4">
@@ -533,7 +533,7 @@ export default function DashboardPage() {
                     <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.16"/>
                   </svg>
                 </div>
-                <span className="text-sm text-gray-800 font-semibold">Gemini Analysis</span>
+                <span className="text-sm text-gray-800 font-semibold">ResolveOS Analysis</span>
                 <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200">
                   {selectedTicket.ref}
                 </span>
@@ -609,14 +609,12 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* Powered by badge */}
-              <div className="pt-2 border-t border-gray-200 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"/>
-                <span className="text-gray-400 text-xs">Powered by Gemini 2.5 Flash</span>
-              </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm h-auto px-6 py-8 flex flex-col items-center justify-center text-center gap-4">
+            <div
+              className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex flex-col items-center justify-center text-center gap-3"
+              style={{ minHeight: '180px' }}
+            >
               {/* Animated pulse ring around brain icon */}
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-orange-500/20 animate-ping"/>
@@ -629,7 +627,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                <p className="text-white font-medium text-sm">Gemini AI Analysis</p>
+                <p className="text-gray-800 font-medium text-sm">ResolveOS Analysis</p>
                 <p className="text-gray-400 text-xs mt-1 max-w-[180px] leading-relaxed">
                   Select any ticket to get instant AI-powered insights and resolution steps
                 </p>

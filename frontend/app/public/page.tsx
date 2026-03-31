@@ -425,7 +425,7 @@ export default function PublicPage() {
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-center md:text-left">
              <BrandLogo />
              <p className="text-xs text-gray-500 font-medium tracking-wide">
-               Data refreshes every 30 seconds · Powered by Gemini AI · Google Cloud
+               Data refreshes every 30 seconds
              </p>
           </div>
           <div className="flex items-center gap-6 text-sm font-medium text-gray-400">

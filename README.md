@@ -1,268 +1,275 @@
-# 🗣️ JanSamvaad ResolveOS
-### A Voice-First Governance Operating System for India
+# 🇮🇳 JanSamvaad — AI-Powered Civic Grievance Redressal System
 
-> **"Voice mein bol do. Hum sun rahe hain."**
-> *(Just speak. We are listening.)*
+<div align="center">
 
-A multilingual AI-powered civic grievance system built for Bharat. Citizens call a phone number, speak their complaint in Hindi or English — the system automatically converts voice into structured civic tickets, visible to operators in real time. No app. No form. No queue. No smartphone required.
+![JanSamvaad Banner](https://img.shields.io/badge/JanSamvaad-Civic%20AI-F97316?style=for-the-badge&logo=google-cloud&logoColor=white)
+![Live](https://img.shields.io/badge/Status-Live%20on%20GCP-22C55E?style=for-the-badge&logo=googlecloud&logoColor=white)
+![Hackathon](https://img.shields.io/badge/India%20Innovates%202026-Rank%2039%20%2F%2026K%2B-1a3c6e?style=for-the-badge)
 
-> 🏆 Built for **India Innovates 2026 — The FiSTA** | BML Munjal University
+**Register a municipal complaint with a single phone call. No app. No internet. Just dial.**
 
----
+[🌐 Live Demo](https://jan-samvaad-resolve-os.vercel.app) · [📊 Public Dashboard](https://jan-samvaad-resolve-os.vercel.app/public) · [📞 Try It](#try-it-now)
 
-## 🚨 The Problem
-
-Millions of grievances are registered annually across national and municipal portals, yet complaint intake, classification, and follow-up remain largely manual and fragmented.
-
-In many municipal offices, complaints arrive through scattered phone calls, handwritten registers, and WhatsApp messages — making tracking and accountability extremely difficult. The system creates a traceable grievance lifecycle, ensuring complaints cannot disappear into manual registers.
-
-- Existing grievance portals require internet access, smartphones, and digital literacy
-- Over 300 million Indians rely on basic mobile phones without requiring an internet connection — completely excluded from digital governance systems
-- Municipal teams lack real-time visibility, evidence trails, and SLA accountability
-- The result: complaints go unheard, trust in civic systems erodes
+</div>
 
 ---
 
-## ⏱️ Why Now?
+## 🎯 The Problem
 
-Three trends make JanSamvaad possible today:
+India has **300M+ citizens** who file municipal complaints through broken, offline, or completely inaccessible processes. Road damage, water supply failures, electricity outages, sanitation issues — these complaints get lost in paperwork, wrong departments, and manual routing delays.
 
-- **Multilingual AI** — Multilingual AI models now reliably understand Hindi-English code-mix speech, making voice-based governance interfaces practical for the first time
-- **Digital India push** — Government momentum toward digital governance platforms creates the right policy environment
-- **Cloud telephony at scale** — Scalable voice infrastructure makes citizen-facing IVR systems affordable and deployable nationwide
-
-Together, these enable a new generation of voice-first civic infrastructure.
+**JanSamvaad makes it as simple as making a phone call.**
 
 ---
 
-## 🇮🇳 Alignment with National Initiatives
+## ✨ How It Works
 
-| Initiative | How JanSamvaad Aligns |
-|-----------|----------------------|
-| 🇮🇳 Digital India Mission | Voice-first interface bridges the digital divide |
-| 🏙️ Smart Cities Command Centers | Real-time dashboard integrates with municipal ops |
-| 🗣️ Bhashini Multilingual AI | Multilingual voice intake (Hindi, English — more planned) |
-| 📱 Inclusive Governance | Works on any basic phone, no smartphone needed |
-| 📊 Ease of Governance | Eliminates manual grievance logging for operators |
-
----
-
-## ✅ How It Works
-
-| Step | What Happens |
-|------|-------------|
-| 📞 Citizen calls | Dials the number — works on any basic mobile phone without requiring an internet connection |
-| 🎙️ Speaks complaint | In Hindi or English, no typing required |
-| 🤖 AI classifies | Automatically extracts grievance category, severity, and summary in seconds |
-| 🎫 Ticket created | Auto-logged with a unique reference number |
-| 📊 Dashboard updates | Operator sees real-time ticket updates — eliminates manual grievance logging |
-| 📱 SMS confirmation | Citizen receives ticket reference immediately |
-| 🔍 Evidence upload | Operator attaches photos or documents |
-| ✅ Resolution | One-click resolve sends SMS + QR-verified receipt to citizen |
+```
+Citizen calls toll-free number
+        ↓
+Twilio receives the call & streams audio
+        ↓
+Gemini 2.5 Flash transcribes + classifies complaint
+(Category · Ward · Severity · Language — Hindi or English)
+        ↓
+Ticket created in PostgreSQL with SLA deadline
+        ↓
+SMS sent to citizen with ticket reference ID
+        ↓
+Automated voice callback confirms registration
+        ↓
+Operator dashboard shows ticket in real time
+        ↓
+AI analysis generated per ticket (priority · actions · ETA)
+```
 
 ---
 
-## 🌏 The Offline India Advantage
+## 🚀 Features
 
-Over 300 million Indians still rely on basic mobile phones without internet access, making voice-first governance essential for inclusive civic participation. Because JanSamvaad relies on voice calls rather than smartphone apps, it can scale across India's 4,000+ municipalities and rural districts — reaching citizens that app-based solutions simply cannot.
+### For Citizens
+- 📞 **Voice-first** — call to register, no app or smartphone needed
+- 🗣️ **Bilingual** — full support for Hindi and English
+- 📲 **SMS confirmation** — ticket ID delivered instantly
+- 🔔 **Voice callback** — automated call confirms your complaint is registered
+- 🔍 **Track status** — check complaint status anytime at the public portal
+
+### For Operators
+- 📊 **Live dashboard** — real-time ticket feed with 10-second polling
+- 🤖 **AI analysis per ticket** — Gemini generates priority score, root cause, suggested actions, and estimated resolution time
+- 🗺️ **Ward heatmap** — visualise complaint density across all 20 wards
+- ⏱️ **SLA tracking** — colour-coded countdown timers per ticket
+- 📈 **Analytics** — category breakdown, resolution rate, severity distribution
+
+### For the Public
+- 🌐 **Transparency portal** — real-time civic data, no login required
+- 📊 **Live stats** — total complaints, resolution rate, category breakdown
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Voice Pipeline** | Twilio Programmable Voice + TwiML |
+| **AI / NLP** | Google Gemini 2.5 Flash |
+| **Backend** | Node.js · Express.js |
+| **Database** | PostgreSQL (Neon DB) · SLA indexing |
+| **Frontend** | Next.js 14 · TypeScript · Tailwind CSS |
+| **Deployment** | Google Cloud Run · Docker · GitHub Actions CI/CD |
+| **Auth** | JWT · bcrypt |
+| **Real-time** | Socket.IO · 10s polling |
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-Citizen Voice Call
-       ↓
-IVR Flow (DND Check + Consent)
-       ↓
-Language Detection → Record → Transcribe
-       ↓
-Node.js + Express (Telephony Webhook Processing)
-       ↓
-Gemini AI (Auto-classification → category, severity, summary)
-       ↓
-PostgreSQL (Ticket Created + Reference Generated)
-       ↓
-SLA Engine + Escalation Logic
-       ↓
-Socket.IO (Real-time ticket updates to operator dashboard)
-       ↓
-Operator Dashboard (React — Live View)
-       ↓
-Evidence Upload → Resolve → SMS + QR Resolution Card
+┌─────────────────────────────────────────────────────┐
+│                    CITIZEN                          │
+│              Calls toll-free number                 │
+└───────────────────┬─────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│                  TWILIO                             │
+│     Receives call → streams to webhook              │
+└───────────────────┬─────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│            NODE.JS / EXPRESS (GCP Cloud Run)        │
+│                                                     │
+│  ┌─────────────┐    ┌──────────────────────────┐   │
+│  │ Voice       │    │  Gemini 2.5 Flash        │   │
+│  │ Webhook     │───▶│  • Transcription         │   │
+│  │             │    │  • Classification        │   │
+│  │             │    │  • Ward extraction       │   │
+│  └──────┬──────┘    │  • Language detection    │   │
+│         │           └──────────────────────────┘   │
+│         ▼                                           │
+│  ┌─────────────┐    ┌──────────────────────────┐   │
+│  │ PostgreSQL  │    │  Twilio SMS + Callback   │   │
+│  │ (Neon DB)   │    │  • Ticket ID via SMS     │   │
+│  │ • Tickets   │    │  • Voice confirmation    │   │
+│  │ • Wards     │    └──────────────────────────┘   │
+│  │ • SLA       │                                   │
+│  └─────────────┘                                   │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│            NEXT.JS FRONTEND (Vercel)                │
+│                                                     │
+│  • Operator Dashboard (live tickets + AI analysis)  │
+│  • Public Transparency Portal (no login required)   │
+│  • Complaint Tracker (citizens track by ref ID)     │
+└─────────────────────────────────────────────────────┘
 ```
-
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| 📞 Citizen Interface | Twilio Voice + SMS | IVR calls & SMS notifications |
-| 🤖 AI Engine | Google Gemini AI | Auto-classification of grievances |
-| ⚙️ Backend | Node.js + Express | REST API & telephony webhook processing |
-| 🗄️ Data | PostgreSQL + Socket.IO | Persistent storage & real-time events |
-| 🖥️ Frontend | React 18 + Vite + Tailwind | Live operator dashboard |
-| 🔒 Security | JWT + node-cron + pino | Auth, SLA enforcement & structured logging |
-| 🚀 Infrastructure | Docker + nginx | 3-container deployment |
-
-> 🔐 Citizen data is stored securely with access control and encrypted communication channels.
-
----
-
-## ⚡ Voice-First vs Traditional Grievance Portals
-
-| Feature | Traditional Grievance Portals | JanSamvaad ResolveOS |
-|---------|-------------------------------|----------------------|
-| Requires internet | ✅ Yes | ❌ Not required |
-| Requires smartphone | ✅ Yes | ❌ Not required |
-| AI auto-classification | ❌ No | ✅ Yes |
-| Real-time operator dashboard | ❌ No | ✅ Yes |
-| SMS proof to citizen | ❌ No | ✅ Yes |
-| Works on basic phone | ❌ No | ✅ Yes |
-| Eliminates manual logging | ❌ No | ✅ Yes |
-| QR-verified resolution receipt | ❌ No | ✅ Yes |
-
----
-
-## 📖 Example Deployment Scenario
-
-A resident calls to report a broken streetlight near their street. Within seconds:
-
-1. The system converts speech into a structured grievance ticket
-2. The ticket is routed to the relevant ward engineer
-3. The citizen receives an SMS confirmation with a reference number
-4. Once repaired, the citizen receives a QR-verified resolution proof
-
-This creates a transparent grievance loop between citizen and administration — with full accountability at every step.
-
----
-
-## 🏛️ Potential Government Deployment
-
-JanSamvaad can be deployed at municipal control rooms, MLA/MP offices, or Smart City command centers. A single system can handle thousands of voice complaints daily while maintaining a transparent ticketing and escalation workflow — without requiring any change in citizen behavior.
-
----
-
-## 🚀 Running Locally
-
-### Prerequisites
-- Docker + Docker Compose
-- Twilio account with a phone number
-- Google Gemini API key
-- ngrok (for local webhook exposure)
-
-### Setup
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/akshatg-721/JanSamvaad-ResolveOS.git
-cd JanSamvaad-ResolveOS
-
-# 2. Create your .env file
-cp .env.example .env
-# Fill in your Twilio, Gemini, and DB credentials
-
-# 3. Start ngrok to expose your local backend
-ngrok http 3000
-# Copy the ngrok URL → set as APP_BASE_URL in .env
-# Set it as webhook URL in Twilio console: <ngrok-url>/webhook/voice
-
-# 4. Build and run
-docker compose up --build
-```
-
-### Access
-- **Dashboard:** http://localhost
-- **Login:** `admin` / `admin123`
-- **Backend API:** http://localhost:3000
 
 ---
 
 ## 📁 Project Structure
 
 ```
-├── server.js                    # Express + Socket.IO entry point
+JanSamvaad-ResolveOS/
 ├── src/
-│   ├── webhooks/voice.js        # IVR flow, consent, transcription
-│   ├── services/llm.js          # Gemini AI — auto-classification
-│   ├── crm/ticket.js            # Ticket creation, SLA logic
 │   ├── api/
-│   │   ├── auth.js              # JWT login
-│   │   ├── dashboard.js         # /api/tickets, /api/stats
-│   │   └── evidence.js          # Evidence upload, resolve endpoint
-│   ├── middleware/
-│   │   └── authenticateToken.js # JWT middleware
-│   └── utils/logger.js          # Structured logging
-├── src/components/Dashboard.jsx # React operator dashboard
-├── frontend/default.conf        # nginx reverse proxy config
-├── docker-compose.yml           # 3-container orchestration
-└── .env.example                 # Environment variable template
+│   │   └── dashboard.js        # REST API routes + AI analysis endpoint
+│   ├── services/
+│   │   └── llm.js              # Gemini AI integration
+│   ├── webhooks/
+│   │   └── voice.js            # Twilio voice pipeline
+│   └── db/
+│       └── schema.sql          # PostgreSQL schema
+├── frontend/
+│   ├── app/
+│   │   ├── page.jsx            # Landing page
+│   │   ├── dashboard/          # Operator dashboard
+│   │   ├── public/             # Transparency portal
+│   │   ├── track/              # Complaint tracker
+│   │   └── login/              # Operator login
+│   └── components/
+│       └── BrandLogo.tsx       # Inline SVG brand component
+├── server.js                   # Express server entry point
+├── .github/workflows/
+│   └── deploy.yml              # CI/CD → GCP
+└── docker-compose.yml          # Local development
 ```
 
 ---
 
-## 🌐 Environment Variables
+## ⚙️ Local Setup
 
+### Prerequisites
+- Node.js 18+
+- PostgreSQL (or Neon DB account)
+- Google Cloud account (Gemini API key)
+- Twilio account
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/akshatg-721/JanSamvaad-ResolveOS.git
+cd JanSamvaad-ResolveOS
+npm install
+cd frontend && npm install && cd ..
+```
+
+### 2. Environment Variables
+
+Create `.env` in root:
 ```env
-POSTGRES_DB=jansamvaad
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=yourpassword
-DATABASE_URL=postgresql://postgres:yourpassword@postgres:5432/jansamvaad
-
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_PHONE_NUMBER=+1XXXXXXXXXX
-
-GEMINI_API_KEY=your_gemini_key
-
-PORT=3000
-APP_BASE_URL=https://your-ngrok-url.ngrok-free.app
-JWT_SECRET=your_32_char_secret
+DATABASE_URL=postgresql://user:password@host:5432/jansamvaad
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+TWILIO_PHONE_NUMBER=your_twilio_number
+JWT_SECRET=your_jwt_secret_min_32_chars
 OPERATOR_USERNAME=admin
-OPERATOR_PASSWORD=admin123
-ENABLE_SLA_CRON=true
+OPERATOR_PASSWORD=your_password
+ALLOWED_ORIGIN=http://localhost:3000
+ENABLE_CALLBACK=false
+PORT=3000
 ```
 
----
+Create `frontend/.env.local`:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
 
-## 📊 Potential Impact
+### 3. Database Setup
+```bash
+psql $DATABASE_URL -f src/db/schema.sql
+```
 
-- **Reduces grievance intake time** from several minutes of manual logging to seconds through automated voice classification
-- **Eliminates manual grievance logging** for operators through AI-assisted intake
-- **Improves transparency** in grievance handling via QR-verified receipts
-- **Creates a traceable grievance lifecycle** — complaints cannot disappear into manual registers
-- **Enables data-driven municipal governance** through structured ticket data
-- **Inclusive governance** for 300 million+ citizens without smartphones
+### 4. Run Locally
+```bash
+# Terminal 1 — Backend
+npm run dev
 
-**Roadmap:**
-- Multi-language support (Tamil, Bengali, Marathi, Gujarati)
-- WhatsApp channel integration
-- Auto-escalation to district collectors
-- Integration with Smart Cities Command Centers
-- Bhashini API integration for broader language coverage
+# Terminal 2 — Frontend
+cd frontend && npm run dev
+```
 
----
-
-## 🎥 Demo Video
-
-[![JanSamvaad ResolveOS Live Demo](https://img.youtube.com/vi/UxZRcPat5WY/maxresdefault.jpg)](https://youtu.be/UxZRcPat5WY)
-
-> Click the thumbnail above to watch the live demo — citizen call → AI classification → dashboard update → SMS + QR resolution proof.
+Backend runs on `http://localhost:3000`
+Frontend runs on `http://localhost:3001`
 
 ---
 
-## 👥 Team
+## 📞 Try It Now
 
-| Name | Role |
-|------|------|
-| **Akshat Goyal** ⭐ | Team Lead & Full Stack Developer |
-| **Harsheet Dwivedi** | AI & Backend Engineer |
-| **Pranav Aggarwal** | Frontend & UI Engineer |
-| **Aditya Jain** | Research & Deployment Engineer |
+The system is live on GCP. To test the voice pipeline:
 
-**BML Munjal University** | India Innovates 2026 — The FiSTA
+1. Call **+1 570 630 8042**
+2. Describe your complaint in Hindi or English
+3. You'll receive an SMS with your ticket ID
+4. Track your complaint at [jan-samvaad-resolve-os.vercel.app/track](https://jan-samvaad-resolve-os.vercel.app/track)
 
 ---
 
-*Built with ❤️ for Bharat 🇮🇳*
+## 🏆 Recognition
+
+| Event | Result |
+|-------|--------|
+| **India Innovates 2026** — FiSTA National Hackathon | 🥇 Rank **39 / 26,000+** participants |
+| **Venue** | Bharat Mandapam, New Delhi |
+| **Date** | March 28, 2026 |
+| **Demo** | Live GCP deployment — real calls, real tickets, real AI |
+
+---
+
+## 🔮 Roadmap
+
+- [ ] WhatsApp integration for complaint registration
+- [ ] Multilingual support (Tamil, Bengali, Marathi)
+- [ ] Officer mobile app for field updates
+- [ ] Predictive analytics for recurring complaint hotspots
+- [ ] Integration with municipal ERP systems
+
+---
+
+## 👨‍💻 Author
+
+**Akshat Goyal**
+B.Tech Computer Science & Engineering, 1st Year
+BML Munjal University, Gurugram
+
+[![Email](https://img.shields.io/badge/Email-akshatgtech721%40gmail.com-D14836?style=flat&logo=gmail&logoColor=white)](mailto:akshatgtech721@gmail.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/akshat-goyal)
+
+---
+
+## 📄 License
+
+MIT License — feel free to fork, build, and improve.
+
+---
+
+<div align="center">
+
+**Built for India. Built with ❤️ and a lot of debugging at 3 AM.**
+
+*"No app. No internet. Just a phone call."*
+
+</div>
